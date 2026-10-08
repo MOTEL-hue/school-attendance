@@ -36,7 +36,7 @@ pre{background:var(--bg);border:1px solid var(--line);padding:10px;border-radius
 <b>{{ request.session.support|yesno:"👁 תמיכה (צפייה בלבד),📋 נוכחות" }}</b>
 <a href="{% url 'dashboard' %}">ראשי</a><a href="{% url 'web_report' %}">דיווח באתר</a><a href="{% url 'records' %}">דיווחים</a>
 <a href="{% url 'students' %}">תלמידות</a><a href="{% url 'summary' %}">דוחות</a><a href="{% url 'alerts' %}">התראות</a>
-<a href="{% url 'crud_list' 'rules' %}">כללי התראה</a><a href="{% url 'settings' %}">הגדרות</a><a href="{% url 'help' %}">עזרה</a>
+<a href="{% url 'crud_list' 'rules' %}">כללי התראה</a><a href="{% url 'settings' %}">הגדרות</a><a href="{% url 'plans' %}">מסלולים ותשלום</a><a href="{% url 'help' %}">עזרה</a>
 <form method="post" action="{% url 'logout' %}" style="margin-inline-start:auto">{% csrf_token %}<button class="sec">יציאה</button></form>
 </nav>
 {% endif %}

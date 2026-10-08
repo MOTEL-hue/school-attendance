@@ -1,0 +1,18 @@
+{% extends "attendance/base.html" %}{% block title %}מסלולים ותשלום{% endblock %}
+{% block content %}
+<h1>מסלולים ותשלום</h1>
+<div class="help">מדריך לבחירת מסלולים. האתר <b>לא גובה תשלום ולא שומר פרטי תשלום</b>: משדרגים ישירות אצל כל ספק, בכפתור שלידו. המחירים משוערים ומשתנים, ולכן ליד כל רכיב יש קישור למחירון העדכני. אפשר להתחיל בחינם ולשדרג בכל רגע, וגם לחזור אחורה.</div>
+
+<h2>איזה שילוב מתאים לי?</h2>
+<div class="grid">{% for sc in scenarios %}<div class="card"><b>{{ sc.title }}</b><div class="stat" style="font-size:1.3rem">{{ sc.cost }}</div><div class="mute">{{ sc.text }}</div></div>{% endfor %}</div>
+
+{% for c in components %}
+<h2>{{ c.title }}</h2>
+<div class="card"><p>{{ c.what }}</p>
+<div class="grid">{% for t in c.tiers %}
+<div class="card" style="margin:0;{% if t.recommended %}border-color:var(--brand){% endif %}"><b>{{ t.name }}</b>{% if t.recommended %} <span class="tag">מומלץ</span>{% endif %}
+<div class="stat" style="font-size:1.1rem">{{ t.price }}</div><div class="mute">מתאים ל: {{ t.good }}</div><p>{{ t.details }}</p></div>{% endfor %}</div>
+<p><b>איך משדרגים:</b> {{ c.upgrade_how }}</p>
+<p class="noprint"><a class="btn" href="{{ c.upgrade_url }}" target="_blank" rel="noopener noreferrer">מעבר לשדרוג אצל הספק</a> <a class="btn sec" href="{{ c.pricing_url }}" target="_blank" rel="noopener noreferrer">מחירון עדכני</a></p></div>
+{% endfor %}
+{% endblock %}

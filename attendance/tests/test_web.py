@@ -127,3 +127,11 @@ class WebTests(Base):
     def test_hebrew_date(self):
         self.assertIn("תשפ", hebrew_date(date(2026, 3, 1)) + "תשפ")  # קיים ולא נופל
         self.assertTrue(hebrew_date(date(2026, 3, 1)))
+
+    def test_plans_page(self):
+        r = self.client.get("/plans/")
+        self.assertContains(r, "Starter")
+        self.assertContains(r, "מחירון עדכני")
+        self.assertContains(r, 'rel="noopener noreferrer"')
+        self.client.logout()
+        self.assertEqual(self.client.get("/plans/").status_code, 302)

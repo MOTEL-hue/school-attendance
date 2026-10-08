@@ -488,6 +488,13 @@ def _xlsx(data, name):
     return r
 
 
+@login_required
+def plans_page(request):
+    from .plans import COMPONENTS, SCENARIOS
+    return render(request, "attendance/plans.html", {"components": COMPONENTS, "scenarios": SCENARIOS,
+                                                     "s": SchoolSettings.get()})
+
+
 # ---------- עוזר אישי ----------
 @login_required
 @require_POST

@@ -35,6 +35,7 @@ urlpatterns = [
     path("audit/", v.audit_page, name="audit"),
     path("backup/", v.backup, name="backup"),
     path("help/", v.help_page, name="help"),
+    path("plans/", v.plans_page, name="plans"),
     path("assistant/chat/", v.assistant_chat, name="assistant_chat"),
     path("assistant/<int:pk>/<str:decision>/", v.assistant_decide, name="assistant_decide"),
     path("help/support-code/", v.support_code, name="support_code"),
