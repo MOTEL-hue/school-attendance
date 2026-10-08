@@ -21,6 +21,9 @@ class SettingsForm(forms.ModelForm):
                                               choices=[(str(k), v) for k, v in WEEKDAYS],
                                               widget=forms.CheckboxSelectMultiple)
 
+    field_order = ["school_name", "yemot_number", "yemot_password_input", "phone_dir", "auth_mode", "unknown_tz",
+                   "ask_time", "ask_reason", "allow_other_date", "days_off_list"]
+
     class Meta:
         model = SchoolSettings
         fields = ["school_name", "yemot_number", "phone_dir", "caller_id", "voice_template_id", "auth_mode",

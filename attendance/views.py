@@ -332,7 +332,9 @@ def settings_page(request):
         messages.success(request, "ההגדרות נשמרו")
         return redirect("settings")
     url = phone_url(request)
-    return render(request, "attendance/settings.html", {"form": form, "s": s, "phone_url": url,
+    basic = ["school_name", "yemot_number", "yemot_password_input", "phone_dir", "auth_mode", "unknown_tz",
+             "ask_time", "ask_reason", "allow_other_date", "days_off_list"]
+    return render(request, "attendance/settings.html", {"form": form, "s": s, "phone_url": url, "basic": basic,
                                                         "ext_ini": ext_ini_text(s, url)})
 
 
