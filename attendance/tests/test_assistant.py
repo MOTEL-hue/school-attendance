@@ -104,13 +104,12 @@ class AssistantLogic(Base):
         self.assertEqual(pending, [])
 
     def test_setup_extension_executes_with_secret_url_not_in_llm(self):
-        with override_settings(PHONE_SECRET="SEKRET"):
-            llm = script([use("propose_setup_extension", {})], [text("ok")])
-            _, pending = assistant.run_chat([{"role": "user", "content": "x"}], llm=llm)
-            self.assertNotIn("SEKRET", "".join(llm.sent))
-            with mock.patch("attendance.yemot_client._call") as m:
-                assistant.execute(pending[0], "https://school.test")
-        self.assertEqual(m.call_args[0][2]["api_link"], "https://school.test/phone/SEKRET/")
+        llm = script([use("propose_setup_extension", {})], [text("ok")])
+        _, pending = assistant.run_chat([{"role": "user", "content": "x"}], llm=llm)
+        self.assertNotIn(self.school.phone_secret, "".join(llm.sent))
+        with mock.patch("attendance.yemot_client._call") as m:
+            assistant.execute(pending[0], "https://school.test", phone_secret=self.school.phone_secret)
+        self.assertEqual(m.call_args[0][2]["api_link"], f"https://school.test/phone/{self.school.phone_secret}/")
 
     def test_tool_loop_is_bounded(self):
         llm = script(*[[use("get_settings", {}, id=f"t{i}")] for i in range(20)])
@@ -129,8 +128,7 @@ class AssistantLogic(Base):
 class AssistantViews(Base):
     def setUp(self):
         super().setUp()
-        User.objects.create_superuser("admin", password="pw")
-        self.client.login(username="admin", password="pw")
+        self.client.login(username="a@x.com", password="pw")
         self.s.assistant_key = "sk-test"
         self.s.save()
 

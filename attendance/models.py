@@ -1,10 +1,17 @@
 """מודלים: הגדרות בית הספר, תלמידות, דיווחים, כללי התראה והתראות."""
 import re
 
+import hashlib
+import hmac
+import secrets
+
+from django.conf import settings as dj_settings
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
 
 from . import crypto
+from .tenant import TenantModel
 
 WEEKDAYS = [(0, "שני"), (1, "שלישי"), (2, "רביעי"), (3, "חמישי"), (4, "שישי"), (5, "שבת"), (6, "ראשון")]
 # Python weekday(): Monday=0 ... Sunday=6
@@ -19,7 +26,43 @@ def clean_phone(p: str) -> str:
     return p
 
 
-class SchoolSettings(models.Model):
+def hash_pin(pin: str) -> str:
+    """קוד אישי נשמר מגובב, לא כטקסט (4-8 ספרות: ההגנה היא בעיקר מפני צפייה מקרית)."""
+    return hmac.new(dj_settings.SECRET_KEY.encode(), f"pin:{pin}".encode(), hashlib.sha256).hexdigest()[:40]
+
+
+class School(models.Model):
+    """בית ספר שרשום במערכת המרכזית. אין לו ירושה מ-TenantModel: זו הישות שמסננים לפיה."""
+
+    PENDING, ACTIVE, SUSPENDED = "pending", "active", "suspended"
+    STATUSES = [(PENDING, "ממתין לאישור"), (ACTIVE, "פעיל"), (SUSPENDED, "מושעה")]
+    name = models.CharField("שם בית הספר", max_length=120)
+    status = models.CharField(max_length=10, choices=STATUSES, default=PENDING)
+    phone_secret = models.CharField(max_length=60, unique=True, default=secrets.token_urlsafe)
+    contact_name = models.CharField("איש קשר", max_length=80, blank=True)
+    contact_phone = models.CharField("טלפון", max_length=20, blank=True)
+    contact_email = models.EmailField("מייל", blank=True)
+    terms_accepted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    last_report_at = models.DateTimeField(null=True, blank=True)
+    owner_notes = models.CharField(max_length=300, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
+
+
+class SchoolUser(models.Model):
+    """משתמש שמנהל בית ספר מסוים."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="school_profile")
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="users")
+
+
+class SchoolSettings(TenantModel):
     """שורה אחת בלבד: כל ההגדרות של בית הספר."""
 
     AUTH_CHOICES = [
@@ -51,6 +94,7 @@ class SchoolSettings(models.Model):
     support_contact = models.CharField("דרך ליצירת קשר עם התמיכה", max_length=200, blank=True)
     assistant_key_enc = models.TextField(blank=True)
     assistant_model = models.CharField("מודל של העוזר האישי", max_length=60, default="claude-sonnet-5-5")
+    extension_done = models.BooleanField("השלוחה הוגדרה בימות המשיח", default=False)
 
     class Meta:
         verbose_name = "הגדרות"
@@ -87,19 +131,20 @@ class SchoolSettings(models.Model):
         return f"{self.yemot_number}:{self.yemot_password}" if self.yemot_number and self.yemot_password else ""
 
 
-class LessonSlot(models.Model):
-    number = models.PositiveSmallIntegerField("מספר שיעור", unique=True)
+class LessonSlot(TenantModel):
+    number = models.PositiveSmallIntegerField("מספר שיעור")
     start = models.TimeField("התחלה")
     end = models.TimeField("סיום")
 
     class Meta:
         ordering = ["number"]
+        constraints = [models.UniqueConstraint(fields=["school", "number"], name="uniq_lesson_per_school")]
 
     def __str__(self):
         return f"שיעור {self.number} ({self.start:%H:%M}-{self.end:%H:%M})"
 
 
-class NonSchoolDay(models.Model):
+class NonSchoolDay(TenantModel):
     name = models.CharField("שם (חופשה / חג)", max_length=80)
     date_from = models.DateField("מתאריך")
     date_to = models.DateField("עד תאריך")
@@ -111,19 +156,20 @@ class NonSchoolDay(models.Model):
         return f"{self.name} ({self.date_from:%d/%m/%Y} - {self.date_to:%d/%m/%Y})"
 
 
-class SchoolClass(models.Model):
-    name = models.CharField("שם הכיתה", max_length=40, unique=True)
+class SchoolClass(TenantModel):
+    name = models.CharField("שם הכיתה", max_length=40)
     order = models.PositiveSmallIntegerField("סדר", default=0)
 
     class Meta:
         ordering = ["order", "name"]
+        constraints = [models.UniqueConstraint(fields=["school", "name"], name="uniq_class_per_school")]
 
     def __str__(self):
         return self.name
 
 
-class Student(models.Model):
-    tz = models.CharField("מספר זהות", max_length=12, unique=True)
+class Student(TenantModel):
+    tz = models.CharField("מספר זהות", max_length=12)
     first_name = models.CharField("שם פרטי", max_length=40)
     last_name = models.CharField("שם משפחה", max_length=40)
     school_class = models.ForeignKey(SchoolClass, on_delete=models.PROTECT, related_name="students", verbose_name="כיתה")
@@ -133,6 +179,7 @@ class Student(models.Model):
 
     class Meta:
         ordering = ["school_class__order", "school_class__name", "last_name", "first_name"]
+        constraints = [models.UniqueConstraint(fields=["school", "tz"], name="uniq_tz_per_school")]
 
     def __str__(self):
         return f"{self.last_name} {self.first_name}"
@@ -142,14 +189,17 @@ class Student(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-class Contact(models.Model):
+class Contact(TenantModel):
     """טלפון המשויך לתלמידה: הורה, תלמידה עצמה וכו'. לשם זיהוי מתקשרות וצינתוקים."""
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="contacts")
     label = models.CharField("תיאור (אמא / אבא / תלמידה...)", max_length=30)
     phone = models.CharField("טלפון", max_length=20)
     receives_alerts = models.BooleanField("מקבל/ת צינתוקי התראה", default=True)
-    pin = models.CharField("קוד אישי לטלפון (ספרות)", max_length=8, blank=True)
+    pin = models.CharField("קוד אישי (מגובב)", max_length=40, blank=True)
+
+    def set_pin(self, pin):
+        self.pin = hash_pin(pin) if pin else ""
 
     def save(self, *a, **kw):
         self.phone = clean_phone(self.phone)
@@ -159,13 +209,19 @@ class Contact(models.Model):
         return f"{self.label} {self.phone}"
 
 
-class AuthorizedCaller(models.Model):
+class AuthorizedCaller(TenantModel):
     """מזכירה / מורה / מנהלת שמורשות לדווח על כל תלמידה."""
 
     name = models.CharField("שם", max_length=60)
-    phone = models.CharField("טלפון", max_length=20, unique=True)
-    pin = models.CharField("קוד אישי (ספרות)", max_length=8, blank=True)
+    phone = models.CharField("טלפון", max_length=20)
+    pin = models.CharField("קוד אישי (מגובב)", max_length=40, blank=True)
     active = models.BooleanField("פעיל", default=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["school", "phone"], name="uniq_caller_per_school")]
+
+    def set_pin(self, pin):
+        self.pin = hash_pin(pin) if pin else ""
 
     def save(self, *a, **kw):
         self.phone = clean_phone(self.phone)
@@ -175,7 +231,7 @@ class AuthorizedCaller(models.Model):
         return f"{self.name} {self.phone}"
 
 
-class Attendance(models.Model):
+class Attendance(TenantModel):
     LATE_SCHOOL, LATE_LESSON, ABSENT = "late_school", "late_lesson", "absent"
     KINDS = [(LATE_SCHOOL, "איחור לבית ספר"), (LATE_LESSON, "איחור לשיעור"), (ABSENT, "חיסור")]
     REASONS = [("sick", "מחלה"), ("approved", "אישור"), ("other", "אחר"), ("", "ללא")]
@@ -203,7 +259,7 @@ class Attendance(models.Model):
         return f"{self.student or self.raw_tz} {self.get_kind_display()} {self.date}"
 
 
-class AlertRule(models.Model):
+class AlertRule(TenantModel):
     METRICS = [
         ("late_any", "איחורים (לבית ספר + לשיעור)"),
         ("late_school", "איחורים לבית ספר"),
@@ -248,7 +304,7 @@ class AlertRule(models.Model):
         return self.name
 
 
-class Alert(models.Model):
+class Alert(TenantModel):
     rule = models.ForeignKey(AlertRule, on_delete=models.CASCADE, related_name="alerts")
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="alerts")
     multiple = models.PositiveSmallIntegerField(default=1)
@@ -265,7 +321,7 @@ class Alert(models.Model):
         ordering = ["handled", "-created_at"]
 
 
-class AuditLog(models.Model):
+class AuditLog(TenantModel):
     when = models.DateTimeField(default=timezone.now)
     actor = models.CharField(max_length=60)
     action = models.CharField(max_length=40)
@@ -275,7 +331,7 @@ class AuditLog(models.Model):
         ordering = ["-when"]
 
 
-class PendingAction(models.Model):
+class PendingAction(TenantModel):
     """שינוי שהעוזר האישי הציע וממתין ללחיצת אישור."""
 
     tool = models.CharField(max_length=40)

@@ -4,12 +4,13 @@
 בשרת: המקום בשיחה נקבע לפי המשתנים שכבר הגיעו. אחרי כל דיווח מתחיל "סיבוב" חדש
 (המשתנים מסומנים במספר הסיבוב) כדי שאפשר יהיה לדווח על כמה תלמידות באותה שיחה.
 """
+import hmac
 import logging
 from datetime import timedelta
 
 from .alerts import counts_for, pending_announcements, window_range  # noqa: F401
 from .calendar_utils import now_il, today_il
-from .models import Attendance, AuthorizedCaller, Contact, SchoolSettings, Student, clean_phone
+from .models import Attendance, AuthorizedCaller, Contact, SchoolSettings, Student, clean_phone, hash_pin
 from .services import create_record, parse_hhmm
 
 log = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ def _handle(p):
                 if var not in p:
                     return ask_digits([t("הקישו את הקוד האישי שלכם")] if i == 1
                                       else [t("הקוד שגוי הקישו שוב")], var, 8)
-                if p[var] == pin:
+                if hmac.compare_digest(hash_pin(p[var]), pin):
                     break
             else:
                 return end([t("הקוד שגוי")], hangup=True)

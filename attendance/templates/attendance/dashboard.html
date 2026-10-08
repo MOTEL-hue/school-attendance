@@ -2,6 +2,7 @@
 {% block content %}
 <h1>{{ s.school_name }}</h1>
 <p class="mute">{{ today }}</p>
+{% if onboarding_left %}<div class="help">ההתקנה עוד לא הושלמה: נשארו {{ onboarding_left }} מתוך {{ onboarding_total }} צעדים. <a href="{% url 'start' %}">לאשף ההתקנה</a></div>{% endif %}
 <div class="grid">
 <div class="card"><div class="stat">{{ late_today }}</div>איחורים היום</div>
 <div class="card"><div class="stat">{{ absent_today }}</div>חיסורים היום</div>

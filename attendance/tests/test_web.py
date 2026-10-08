@@ -12,12 +12,10 @@ from attendance.services import create_record
 from .base import Base
 
 
-@override_settings(PHONE_SECRET="sekret")
 class WebTests(Base):
     def setUp(self):
         super().setUp()
-        User.objects.create_superuser("admin", password="pw")
-        self.client.login(username="admin", password="pw")
+        self.client.login(username="a@x.com", password="pw")
 
     def test_phone_endpoint_secret(self):
         self.client.logout()
@@ -29,8 +27,8 @@ class WebTests(Base):
     def test_pages_render(self):
         create_record(student=self.st, kind="late_school", date=today_il())
         for name in ["dashboard", "web_report", "records", "students", "student_new", "students_import",
-                     "summary", "alerts", "settings", "audit", "backup", "help", "new_year_page"]:
-            r = self.client.get(f"/{ {'dashboard':'', 'web_report':'report/', 'records':'records/', 'students':'students/', 'student_new':'students/new/', 'students_import':'students-import/', 'summary':'summary/', 'alerts':'alerts/', 'settings':'settings/', 'audit':'audit/', 'backup':'backup/', 'help':'help/', 'new_year_page':'new-year/'}[name] }")
+                     "summary", "alerts", "settings", "audit", "backup", "help", "new_year_page", "start"]:
+            r = self.client.get(f"/{ {'dashboard':'', 'web_report':'report/', 'records':'records/', 'students':'students/', 'student_new':'students/new/', 'students_import':'students-import/', 'summary':'summary/', 'alerts':'alerts/', 'settings':'settings/', 'audit':'audit/', 'backup':'backup/', 'help':'help/', 'new_year_page':'new-year/', 'start':'start/'}[name] }")
             self.assertEqual(r.status_code, 200, name)
         for kind in ["classes", "callers", "holidays", "lessons", "rules"]:
             self.assertEqual(self.client.get(f"/manage/{kind}/").status_code, 200, kind)
@@ -113,10 +111,10 @@ class WebTests(Base):
         self.assertTrue(s.support_code_hash)
         # קוד שגוי
         c2 = self.client_class()
-        self.assertContains(c2.post("/support/", {"code": "00000000"}), "קוד שגוי")
+        self.assertContains(c2.post("/support/", {"code": f"{self.school.pk}-00000000"}), "קוד שגוי")
         # מוצאים את הקוד מההודעה
         msgs = [str(m) for m in self.client.get("/help/").context["messages"]]
-        code = next(m.split("קוד התמיכה: ")[1][:8] for m in msgs if "קוד התמיכה" in m)
+        code = next(m.split("קוד התמיכה: ")[1].split(" ")[0] for m in msgs if "קוד התמיכה" in m)
         self.assertEqual(c2.post("/support/", {"code": code}).status_code, 302)
         self.assertEqual(c2.get("/records/").status_code, 200)
         self.assertEqual(c2.post("/records/new/", {}).status_code, 403)
@@ -130,7 +128,8 @@ class WebTests(Base):
 
     def test_plans_page(self):
         r = self.client.get("/plans/")
-        self.assertContains(r, "Starter")
+        self.assertNotContains(r, "Starter")  # אירוח הוא עניין של בעלי המערכת, לא של בית הספר
+        self.assertContains(r, "ימות המשיח")
         self.assertContains(r, "מחירון עדכני")
         self.assertContains(r, 'rel="noopener noreferrer"')
         self.client.logout()

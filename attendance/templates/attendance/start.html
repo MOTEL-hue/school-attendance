@@ -1,0 +1,9 @@
+{% extends "attendance/base.html" %}{% block title %}אשף התקנה{% endblock %}
+{% block content %}
+<h1>אשף התקנה</h1>
+<div class="help">ארבעה צעדים עד שהמערכת עובדת. הושלמו {{ done }} מתוך {{ steps|length }}. אפשר לעצור וללכת בכל רגע, והמצב נשמר. בכל שלב אפשר ללחוץ על "💬 עוזר אישי" ולבקש עזרה.</div>
+{% for st in steps %}<div class="card" style="{% if st.done %}opacity:.7{% endif %}"><b>{% if st.done %}✅{% else %}⬜{% endif %} {{ forloop.counter }}. {{ st.title }}</b><p>{{ st.text }}</p>{% if not st.done %}<a class="btn" href="{% url st.url %}">{{ st.cta }}</a>{% endif %}</div>{% endfor %}
+<h2>ext.ini להדבקה ידנית בשלוחה</h2>
+<div class="card"><p class="mute">אם לא משתמשים בהגדרה האוטומטית: יוצרים שלוחה בימות המשיח ומדביקים בקובץ ext.ini שלה:</p><pre>{{ ext_ini }}</pre>
+<p class="mute">הכתובת מכילה מפתח סודי, אל תפיצו אותה.</p></div>
+{% endblock %}

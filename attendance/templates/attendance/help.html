@@ -12,7 +12,7 @@
 <p>בפעם הראשונה על כל תלמידה מתבקשת הקלטת שם (נשמעת מכאן והלאה בכל שיחה). אם יש התראה על התלמידה - היא מושמעת מיד אחרי הקשת ת.ז.</p></div>
 <div class="card"><h2>תמיכה</h2>
 {% if s.support_contact %}<p>לפניה לתמיכה: {{ s.support_contact }}</p>{% endif %}
-{% if request.session.support %}<p class="mute">את/ה בכניסת תמיכה (צפייה בלבד).</p>{% else %}
+{% if request.session.support_school %}<p class="mute">את/ה בכניסת תמיכה (צפייה בלבד).</p>{% else %}
 <p>כדי שמישהו יוכל לעזור לכם ולראות את המסכים (צפייה בלבד, בלי יכולת לשנות), הפיקו קוד זמני ושלחו אותו:</p>
 <form method="post" action="{% url 'support_code' %}" style="display:inline">{% csrf_token %}<button>הפקת קוד תמיכה (24 שעות)</button></form>
 <form method="post" action="{% url 'support_revoke' %}" style="display:inline">{% csrf_token %}<button class="danger">ביטול הקוד</button></form>

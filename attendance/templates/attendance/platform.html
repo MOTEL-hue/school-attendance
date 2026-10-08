@@ -1,0 +1,17 @@
+{% extends "attendance/base.html" %}{% block title %}בתי ספר{% endblock %}
+{% block content %}
+<h1>בתי הספר במערכת</h1>
+<div class="help">רק לבעלי המערכת. אישור בקשות הרשמה, השעיה (חוסמת גם את הטלפון), כניסה לבית ספר לצורך תמיכה, ויצירת בית ספר ישירות.{% if pending %} <b>ממתינים לאישור: {{ pending }}</b>{% endif %}</div>
+<p><a class="btn" href="{% url 'platform_create' %}">+ יצירת בית ספר</a></p>
+<div class="card scroll"><table><tr><th>בית ספר</th><th>סטטוס</th><th>איש קשר</th><th>תלמידות</th><th>דיווחים</th><th>דיווח אחרון</th><th></th></tr>
+{% for s in schools %}<tr><td><b>{{ s.name }}</b><div class="mute">נרשם {{ s.created_at|date:"d/m/Y" }}</div></td>
+<td><span class="tag {% if s.status != 'active' %}w{% endif %}">{{ s.get_status_display }}</span></td>
+<td>{{ s.contact_name }}<div class="mute">{{ s.contact_phone }} {{ s.contact_email }}</div></td><td>{{ s.students_n }}</td><td>{{ s.reports_n }}</td><td>{{ s.last_report_at|date:"d/m/Y H:i"|default:"-" }}</td>
+<td><form method="post" style="display:inline-flex;gap:4px;flex-wrap:wrap">{% csrf_token %}
+{% if s.status == 'pending' %}<button formaction="{% url 'platform_action' s.pk 'approve' %}">אישור</button>{% endif %}
+{% if s.status == 'active' %}<button class="sec" formaction="{% url 'platform_action' s.pk 'enter' %}">כניסה</button><button class="danger" formaction="{% url 'platform_action' s.pk 'suspend' %}">השעיה</button>{% endif %}
+{% if s.status == 'suspended' %}<button formaction="{% url 'platform_action' s.pk 'resume' %}">הפעלה</button>{% endif %}
+</form>
+<details><summary class="mute">מחיקה</summary><form method="post" action="{% url 'platform_action' s.pk 'delete' %}">{% csrf_token %}<input name="confirm" placeholder="הקלידו את שם בית הספר"><button class="danger">מחיקה סופית</button></form></details></td></tr>
+{% empty %}<tr><td colspan="7" class="mute">אין בתי ספר</td></tr>{% endfor %}</table></div>
+{% endblock %}

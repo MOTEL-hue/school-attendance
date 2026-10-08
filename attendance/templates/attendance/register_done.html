@@ -1,0 +1,4 @@
+{% extends "attendance/base.html" %}{% block title %}תודה{% endblock %}
+{% block content %}<div class="card" style="max-width:520px;margin:40px auto"><h1>הבקשה התקבלה</h1>
+<p>תודה! הבקשה של <b>{{ name }}</b> נשלחה לאישור. אחרי האישור אפשר להיכנס עם המייל והסיסמה שבחרתם, ותלוו באשף התקנה קצר.</p>
+<p><a href="{% url 'login' %}">לכניסה</a></p></div>{% endblock %}

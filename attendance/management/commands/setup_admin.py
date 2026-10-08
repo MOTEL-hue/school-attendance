@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "יוצר את משתמש המנהל (admin) אם אין, לפי ADMIN_PASSWORD"
+    help = "יוצר את משתמש בעל המערכת (admin) אם אין, לפי ADMIN_PASSWORD"
 
     def handle(self, *a, **kw):
         pw = os.environ.get("ADMIN_PASSWORD")

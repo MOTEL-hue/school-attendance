@@ -1,6 +1,9 @@
 """יצירה ותיקון של דיווחי נוכחות (משותף לטלפון ולאתר) + יומן פעולות."""
 from datetime import datetime
 
+from django.utils import timezone
+
+from . import tenant
 from .alerts import evaluate_student
 from .models import Attendance, AuditLog, LessonSlot
 
@@ -34,6 +37,9 @@ def create_record(*, student, kind, date, time=None, date_to=None, reason="", ju
         justified=justified, source=source, caller_phone=caller_phone, source_ref=source_ref)
     who = str(student) if student else f"ת.ז. {raw_tz}"
     audit(actor, "דיווח חדש", f"{who}: {rec.get_kind_display()} {date:%d/%m/%Y}" + (f" {time:%H:%M}" if time else ""))
+    school = tenant.current()
+    if school is not None:
+        type(school).objects.filter(pk=school.pk).update(last_report_at=timezone.now())
     evaluate_student(student)
     return rec, True
 

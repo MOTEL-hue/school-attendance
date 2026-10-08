@@ -33,10 +33,11 @@ pre{background:var(--bg);border:1px solid var(--line);padding:10px;border-radius
 <body>
 {% if user.is_authenticated %}
 <nav class="noprint">
-<b>{{ request.session.support|yesno:"👁 תמיכה (צפייה בלבד),📋 נוכחות" }}</b>
-<a href="{% url 'dashboard' %}">ראשי</a><a href="{% url 'web_report' %}">דיווח באתר</a><a href="{% url 'records' %}">דיווחים</a>
+<b>{% if request.session.support_school %}👁 תמיכה (צפייה בלבד){% elif user.is_superuser and not request.school %}🛠 ניהול המערכת{% else %}📋 {{ request.school.name|default:"נוכחות" }}{% endif %}</b>
+{% if user.is_superuser %}<a href="{% url 'platform' %}">בתי ספר</a>{% if request.school %}<form method="post" action="{% url 'platform_exit' %}" style="display:inline">{% csrf_token %}<button class="sec">יציאה מבית הספר</button></form>{% endif %}{% endif %}
+{% if request.school %}<a href="{% url 'dashboard' %}">ראשי</a><a href="{% url 'web_report' %}">דיווח באתר</a><a href="{% url 'records' %}">דיווחים</a>
 <a href="{% url 'students' %}">תלמידות</a><a href="{% url 'summary' %}">דוחות</a><a href="{% url 'alerts' %}">התראות</a>
-<a href="{% url 'crud_list' 'rules' %}">כללי התראה</a><a href="{% url 'settings' %}">הגדרות</a><a href="{% url 'plans' %}">מסלולים ותשלום</a><a href="{% url 'help' %}">עזרה</a>
+<a href="{% url 'crud_list' 'rules' %}">כללי התראה</a><a href="{% url 'settings' %}">הגדרות</a><a href="{% url 'plans' %}">מסלולים ותשלום</a><a href="{% url 'help' %}">עזרה</a>{% endif %}
 <form method="post" action="{% url 'logout' %}" style="margin-inline-start:auto">{% csrf_token %}<button class="sec">יציאה</button></form>
 </nav>
 {% endif %}
@@ -44,6 +45,6 @@ pre{background:var(--bg);border:1px solid var(--line);padding:10px;border-radius
 {% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
 {% block content %}{% endblock %}
 </main>
-{% if user.is_authenticated and not request.session.support %}{% include "attendance/assistant_widget.html" %}{% endif %}
+{% if user.is_authenticated and not request.session.support_school %}{% include "attendance/assistant_widget.html" %}{% endif %}
 </body>
 </html>

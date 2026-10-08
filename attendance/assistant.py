@@ -5,7 +5,6 @@ import urllib.request
 from datetime import date, timedelta
 from pathlib import Path
 
-from django.conf import settings as dj
 from django.forms.models import model_to_dict
 
 from . import alerts, yemot_client
@@ -290,7 +289,7 @@ def propose(tool, args):
     raise ValueError("כלי לא מוכר")
 
 
-def execute(action, base_url, actor_name="עוזר אישי"):
+def execute(action, base_url, actor_name="עוזר אישי", phone_secret=""):
     """מבצע הצעה שאושרה. מחזיר טקסט תוצאה."""
     tool, a = action.tool, action.args
     if tool == "propose_update_settings":
@@ -315,7 +314,7 @@ def execute(action, base_url, actor_name="עוזר אישי"):
     elif tool == "propose_setup_extension":
         s = SchoolSettings.get()
         yemot_client.update_extension(s, s.phone_dir, {
-            "type": "api", "api_link": f"{base_url}/phone/{dj.PHONE_SECRET}/", "api_url_post": "yes",
+            "type": "api", "api_link": f"{base_url}/phone/{phone_secret}/", "api_url_post": "yes",
             "api_log": "no", "api_dir": s.phone_dir, "api_hangup_send": "no"})
         msg = f"השלוחה {s.phone_dir} הוגדרה בימות המשיח"
     else:

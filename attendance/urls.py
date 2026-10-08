@@ -2,10 +2,23 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views as v
+from . import views_platform as vp
+from . import views_public as vpub
 
 urlpatterns = [
     path("phone/<str:secret>/", v.yemot_api, name="yemot_api"),
-    path("login/", auth_views.LoginView.as_view(template_name="attendance/login.html"), name="login"),
+    path("login/", vpub.ThrottledLoginView.as_view(), name="login"),
+    path("register/", vpub.register, name="register"),
+    path("terms/", vpub.terms, name="terms"),
+    path("privacy/", vpub.privacy, name="privacy"),
+    path("healthz", vpub.healthz, name="healthz"),
+    path("start/", v.start_page, name="start"),
+    path("settings/rotate-secret/", v.rotate_secret, name="rotate_secret"),
+    path("settings/delete-school/", vpub.school_delete, name="school_delete"),
+    path("platform/", vp.platform, name="platform"),
+    path("platform/create/", vp.platform_create, name="platform_create"),
+    path("platform/exit/", vp.platform_exit, name="platform_exit"),
+    path("platform/<int:pk>/<str:action>/", vp.platform_action, name="platform_action"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("support/", v.support_login, name="support_login"),
     path("", v.dashboard, name="dashboard"),

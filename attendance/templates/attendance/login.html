@@ -1,11 +1,12 @@
 {% extends "attendance/base.html" %}{% block title %}כניסה{% endblock %}
 {% block content %}
-<div class="card" style="max-width:380px;margin:40px auto">
+<div class="card" style="max-width:400px;margin:40px auto">
 <h1>כניסה למערכת הנוכחות</h1>
 <form method="post">{% csrf_token %}
-{% for f in form %}<div class="field"><label>{{ f.label }}</label>{{ f }}{% for e in f.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>{% endfor %}
-{% if form.non_field_errors %}<div class="err">שם משתמש או סיסמה שגויים</div>{% endif %}
+{% for f in form %}<div class="field"><label>{% if f.name == 'username' %}מייל (או admin){% else %}{{ f.label }}{% endif %}</label>{{ f }}</div>{% endfor %}
+{% for e in form.non_field_errors %}<div class="err">{{ e }}</div>{% endfor %}
+{% if form.errors and not form.non_field_errors %}<div class="err">מייל או סיסמה שגויים</div>{% endif %}
 <button>כניסה</button></form>
-<p class="mute">שם המשתמש הוא <b>admin</b>. הסיסמה נקבעה בהתקנה (ADMIN_PASSWORD).</p>
-<p><a href="{% url 'support_login' %}">כניסת תמיכה עם קוד</a></p>
+<p><a href="{% url 'register' %}">בית ספר חדש? הרשמה</a></p>
+<p class="mute"><a href="{% url 'support_login' %}">כניסת תמיכה עם קוד</a></p>
 </div>{% endblock %}

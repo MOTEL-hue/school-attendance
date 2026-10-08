@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.db.models import Count, Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -15,26 +16,40 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from . import alerts as alert_mod
+from . import tenant
 from . import importers, phone, reports, yemot_client
 from .calendar_utils import both_dates, hebrew_date, now_il, today_il
 from .forms import (CallerForm, ClassForm, ContactForm, HolidayForm, ImportForm, LessonForm, RecordForm, RuleForm,
                     SettingsForm, StudentForm)
 from .models import (Alert, AlertRule, Attendance, AuditLog, AuthorizedCaller, Contact, LessonSlot, NonSchoolDay,
-                     SchoolClass, SchoolSettings, Student)
+                     School, SchoolClass, SchoolSettings, Student)
 from .services import audit, create_record, parse_hhmm
 
 
 def actor(request):
-    return "תמיכה" if request.session.get("support") else "מנהל/ת"
+    return "תמיכה" if request.session.get("support_school") else "מנהל/ת"
 
 
 # ---------- טלפון ----------
 @csrf_exempt
 def yemot_api(request, secret):
-    if not dj.PHONE_SECRET or not secrets.compare_digest(secret, dj.PHONE_SECRET):
+    school = School.objects.filter(phone_secret=secret).first()
+    if not school:
         raise Http404
+    if school.status != School.ACTIVE:
+        return HttpResponse("id_list_message=t-המערכת אינה פעילה פנו להנהלה&go_to_folder=hangup",
+                            content_type="text/plain; charset=utf-8")
     params = {k: v for k, v in (request.POST if request.method == "POST" else request.GET).items()}
-    return HttpResponse(phone.handle(params), content_type="text/plain; charset=utf-8")
+    token = tenant.activate(school)
+    try:
+        out = phone.handle(params)
+    finally:
+        tenant.deactivate(token)
+    return HttpResponse(out, content_type="text/plain; charset=utf-8")
+
+
+def phone_url(request):
+    return f"{request.build_absolute_uri('/').rstrip('/')}/phone/{request.school.phone_secret}/"
 
 
 # ---------- דף הבית ----------
@@ -53,6 +68,9 @@ def dashboard(request):
         "students": Student.objects.filter(active=True).count(),
         "s": SchoolSettings.get(),
     }
+    steps = onboarding_steps(request)
+    ctx["onboarding_left"] = sum(not x["done"] for x in steps)
+    ctx["onboarding_total"] = len(steps)
     return render(request, "attendance/dashboard.html", ctx)
 
 
@@ -313,8 +331,7 @@ def settings_page(request):
         audit(actor(request), "שינוי הגדרות")
         messages.success(request, "ההגדרות נשמרו")
         return redirect("settings")
-    base = request.build_absolute_uri("/").rstrip("/")
-    url = f"{base}/phone/{dj.PHONE_SECRET}/"
+    url = phone_url(request)
     return render(request, "attendance/settings.html", {"form": form, "s": s, "phone_url": url,
                                                         "ext_ini": ext_ini_text(s, url)})
 
@@ -331,11 +348,12 @@ def yemot_setup(request):
     if not s.phone_dir:
         messages.error(request, "קודם הזינו את תיקיית השלוחה (למשל /7) ושמרו.")
         return redirect("settings")
-    base = request.build_absolute_uri("/").rstrip("/")
     try:
         yemot_client.update_extension(s, s.phone_dir, {
-            "type": "api", "api_link": f"{base}/phone/{dj.PHONE_SECRET}/", "api_url_post": "yes",
+            "type": "api", "api_link": phone_url(request), "api_url_post": "yes",
             "api_log": "no", "api_dir": s.phone_dir, "api_hangup_send": "no"})
+        s.extension_done = True
+        s.save(update_fields=["extension_done"])
         audit(actor(request), "הגדרת שלוחה בימות המשיח", s.phone_dir)
         messages.success(request, f"השלוחה {s.phone_dir} הוגדרה בימות המשיח")
     except yemot_client.YemotError as e:
@@ -432,15 +450,15 @@ def help_page(request):
 @login_required
 @require_POST
 def support_code(request):
-    if request.session.get("support"):
+    if request.session.get("support_school"):
         raise Http404
-    code = f"{secrets.randbelow(10**8):08d}"
+    digits = f"{secrets.randbelow(10**8):08d}"
     s = SchoolSettings.get()
-    s.support_code_hash = hashlib.sha256(code.encode()).hexdigest()
+    s.support_code_hash = hashlib.sha256(digits.encode()).hexdigest()
     s.support_code_expires = timezone.now() + timedelta(hours=24)
     s.save(update_fields=["support_code_hash", "support_code_expires"])
     audit(actor(request), "נוצר קוד תמיכה", "תקף 24 שעות")
-    messages.success(request, f"קוד התמיכה: {code} (תקף 24 שעות, צפייה בלבד). שלחו אותו למי שמסייע לכם.")
+    messages.success(request, f"קוד התמיכה: {request.school.pk}-{digits} (תקף 24 שעות, צפייה בלבד). שלחו אותו למי שמסייע לכם.")
     return redirect("help")
 
 
@@ -455,22 +473,73 @@ def support_revoke(request):
 
 
 def support_login(request):
-    """כניסה לצפייה בלבד עם קוד שבעל/ת המערכת הפיקו/ה."""
+    """כניסה לצפייה בלבד עם קוד בצורה '12-34567890' שבעל/ת בית הספר הפיק/ה."""
     error = ""
     if request.method == "POST":
-        s = SchoolSettings.get()
-        h = hashlib.sha256(request.POST.get("code", "").strip().encode()).hexdigest()
-        if s.support_code_hash and s.support_code_expires and s.support_code_expires > timezone.now() \
-                and secrets.compare_digest(h, s.support_code_hash):
+        ip_key = f"supportfail:{request.META.get('REMOTE_ADDR', '')}"
+        code = request.POST.get("code", "").strip()
+        sid, _, digits = code.partition("-")
+        row = SchoolSettings.all_objects.filter(school_id=int(sid)).first() if sid.isdigit() else None
+        if cache.get(ip_key, 0) >= 10:
+            error = "יותר מדי ניסיונות. נסו שוב מאוחר יותר."
+        elif row and row.support_code_hash and row.support_code_expires and row.support_code_expires > timezone.now() \
+                and secrets.compare_digest(hashlib.sha256(digits.encode()).hexdigest(), row.support_code_hash) \
+                and row.school.status == School.ACTIVE:
             user, _ = User.objects.get_or_create(username="support", defaults={"is_active": True})
             user.set_unusable_password()
             user.save()
             auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-            request.session["support"] = True
-            audit("תמיכה", "כניסת תמיכה", "צפייה בלבד")
+            request.session["support_school"] = row.school_id
+            tok = tenant.activate(row.school)
+            try:
+                audit("תמיכה", "כניסת תמיכה", "צפייה בלבד")
+            finally:
+                tenant.deactivate(tok)
             return redirect("dashboard")
-        error = "קוד שגוי או שפג תוקפו"
+        else:
+            cache.set(ip_key, cache.get(ip_key, 0) + 1, 900)
+            error = "קוד שגוי או שפג תוקפו"
     return render(request, "attendance/support_login.html", {"error": error})
+
+
+@login_required
+@require_POST
+def rotate_secret(request):
+    import secrets as _s
+    school = request.school
+    school.phone_secret = _s.token_urlsafe()
+    school.save(update_fields=["phone_secret"])
+    s = SchoolSettings.get()
+    s.extension_done = False
+    s.save(update_fields=["extension_done"])
+    audit(actor(request), "הוחלפה כתובת סודית של הטלפון")
+    messages.success(request, "הכתובת הוחלפה. עדכנו את השלוחה (הגדרה אוטומטית, או הדבקה מחדש של ה-ext.ini).")
+    return redirect("settings")
+
+
+def onboarding_steps(request):
+    s = SchoolSettings.get()
+    return [
+        {"done": bool(s.yemot_number and s.yemot_password_enc), "title": "פרטי ימות המשיח",
+         "text": "מספר המערכת והסיסמה שלכם בימות המשיח (נשמרים מוצפנים). נדרשים לצינתוקים ולהגדרה האוטומטית של השלוחה.",
+         "url": "settings", "cta": "להגדרות"},
+        {"done": bool(s.phone_dir and s.extension_done), "title": "שלוחת הטלפון",
+         "text": "הגדירו תיקיית שלוחה (למשל /7) ולחצו 'הגדרה אוטומטית', או הדביקו ידנית את ה-ext.ini.",
+         "url": "settings", "cta": "להגדרת השלוחה"},
+        {"done": Student.objects.exists(), "title": "כיתות ותלמידות",
+         "text": "ייבוא מקובץ אקסל (עם תבנית להורדה) או הוספה ידנית.", "url": "students_import", "cta": "לייבוא"},
+        {"done": Attendance.objects.filter(source="phone").exists(), "title": "שיחת ניסיון",
+         "text": "חייגו לשלוחה, הקישו ת.ז. של תלמידה ודווחו. הדיווח יופיע באתר ואז ההתקנה הושלמה.",
+         "url": "records", "cta": "לדיווחים"},
+    ]
+
+
+@login_required
+def start_page(request):
+    steps = onboarding_steps(request)
+    s = SchoolSettings.get()
+    return render(request, "attendance/start.html", {"steps": steps, "done": sum(x["done"] for x in steps),
+                                                     "phone_url": phone_url(request), "ext_ini": ext_ini_text(s, phone_url(request))})
 
 
 # ---------- עזרים ----------
@@ -491,8 +560,10 @@ def _xlsx(data, name):
 @login_required
 def plans_page(request):
     from .plans import COMPONENTS, SCENARIOS
-    return render(request, "attendance/plans.html", {"components": COMPONENTS, "scenarios": SCENARIOS,
-                                                     "s": SchoolSettings.get()})
+    owner = request.user.is_superuser and not request.session.get("support_school")
+    comps = COMPONENTS if owner else [c for c in COMPONENTS if c["key"] in ("ai", "yemot")]
+    return render(request, "attendance/plans.html", {"components": comps, "scenarios": SCENARIOS if owner else [],
+                                                     "is_owner": owner})
 
 
 # ---------- עוזר אישי ----------
@@ -527,7 +598,7 @@ def assistant_decide(request, pk, decision):
         return JsonResponse({"ok": True, "message": "בוטל, לא שונה כלום"})
     try:
         base = request.build_absolute_uri("/").rstrip("/")
-        msg = assistant.execute(action, base, actor(request))
+        msg = assistant.execute(action, base, actor(request), request.school.phone_secret)
         action.status, action.result = "done", msg
     except (ValueError, KeyError, yemot_client.YemotError) as e:
         action.status, action.result = "failed", str(e)[:300]

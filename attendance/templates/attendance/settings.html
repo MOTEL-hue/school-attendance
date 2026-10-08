@@ -14,11 +14,15 @@
 <li>או לחצו על "הגדרה אוטומטית" ואנחנו נעדכן את השלוחה בעצמנו (דורש מספר מערכת וסיסמה שנשמרו למעלה).</li>
 </ol>
 <p><b>תוכן ext.ini:</b></p><pre>{{ ext_ini }}</pre>
-<p class="mute">הכתובת מכילה מפתח סודי - אל תפיצו אותה. אם נחשפה, שנו את PHONE_SECRET בהגדרות השרת ועדכנו כאן.</p>
+<p class="mute">הכתובת מכילה מפתח סודי - אל תפיצו אותה. אם נחשפה, החליפו אותה בכפתור למטה ועדכנו את השלוחה.</p>
 <form method="post" action="{% url 'yemot_setup' %}" style="display:inline">{% csrf_token %}<button class="sec">הגדרה אוטומטית של השלוחה</button></form>
+<form method="post" action="{% url 'rotate_secret' %}" style="display:inline" onsubmit="return confirm('הכתובת הקודמת תפסיק לעבוד עד שתעדכנו את השלוחה. להמשיך?')">{% csrf_token %}<button class="sec">החלפת הכתובת הסודית</button></form>
 <form method="post" action="{% url 'yemot_test' %}" style="display:inline">{% csrf_token %}<button class="sec">בדיקת חיבור לימות המשיח</button></form>
 </div>
 
+<h2>מחיקת בית הספר ונתוניו</h2>
+<div class="card"><div class="help">מוחק לצמיתות את כל הנתונים: תלמידות, דיווחים והגדרות. מומלץ להוריד קודם <a href="{% url 'backup' %}">גיבוי</a>. לא ניתן לשחזר.</div>
+<form method="post" action="{% url 'school_delete' %}" onsubmit="return confirm('למחוק את כל הנתונים לצמיתות?')">{% csrf_token %}<input name="confirm" placeholder="הקלידו את שם בית הספר לאישור"> <button class="danger">מחיקה סופית</button></form></div>
 <h2>עוד</h2>
 <div class="card"><a href="{% url 'crud_list' 'callers' %}">מורשות לדווח</a> · <a href="{% url 'crud_list' 'holidays' %}">חופשות וחגים</a> · <a href="{% url 'crud_list' 'lessons' %}">מערכת שעות</a> · <a href="{% url 'audit' %}">יומן פעולות</a> · <a href="{% url 'backup' %}">גיבוי וייצוא</a></div>
 {% endblock %}
