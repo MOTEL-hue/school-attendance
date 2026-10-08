@@ -31,6 +31,12 @@ def client_ip(request):
 class ThrottledLoginView(LoginView):
     template_name = "attendance/login.html"
 
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["username"].widget.attrs.update({"placeholder": "name@school.com", "autocomplete": "username", "dir": "ltr"})
+        form.fields["password"].widget.attrs.update({"placeholder": "הסיסמה שלכם", "autocomplete": "current-password"})
+        return form
+
     def _key(self, username):
         return f"loginfail:{(username or '').strip().lower()}"
 

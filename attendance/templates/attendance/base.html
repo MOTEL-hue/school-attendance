@@ -1,46 +1,42 @@
-<!doctype html>
+{% load static %}<!doctype html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2f2fae">
 <title>{% block title %}נוכחות{% endblock %}</title>
-<style>
-:root{--bg:#f6f7f9;--card:#fff;--ink:#1c2430;--mute:#5b6675;--line:#dfe3e8;--brand:#1f5fbf;--warn:#b42318;--ok:#157347}
-@media (prefers-color-scheme:dark){:root{--bg:#12161c;--card:#1b212a;--ink:#e8ecf1;--mute:#9aa6b5;--line:#2c3541;--brand:#6ea8ff;--warn:#ff8a80;--ok:#5ad19a}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,"Segoe UI",Arial,sans-serif}
-nav{background:var(--card);border-bottom:1px solid var(--line);padding:8px 16px;display:flex;gap:4px 14px;flex-wrap:wrap;align-items:center;position:sticky;top:0}
-nav a{color:var(--ink);text-decoration:none;padding:4px 6px;border-radius:6px}nav a:hover{background:var(--bg)}nav b{margin-inline-end:8px}
-main{max-width:1050px;margin:0 auto;padding:16px}
-h1{font-size:1.5rem;margin:.2em 0 .6em}h2{font-size:1.15rem;margin:1.2em 0 .4em}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
-.help{background:color-mix(in srgb,var(--brand) 10%,var(--card));border:1px solid color-mix(in srgb,var(--brand) 35%,var(--line));border-radius:10px;padding:10px 14px;margin-bottom:14px;color:var(--ink)}
-.help:before{content:"ℹ️ "}
-table{width:100%;border-collapse:collapse}th,td{text-align:start;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--mute);font-weight:600;font-size:.9rem}
-input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);max-width:100%}
-input[type=checkbox]{width:auto}
-.btn,button{font:inherit;padding:7px 14px;border-radius:8px;border:1px solid var(--brand);background:var(--brand);color:#fff;cursor:pointer;text-decoration:none;display:inline-block}
-.btn.sec,button.sec{background:transparent;color:var(--brand)}.btn.danger,button.danger{background:transparent;color:var(--warn);border-color:var(--warn)}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.stat{font-size:1.9rem;font-weight:700}.mute{color:var(--mute);font-size:.9rem}
-.msg{padding:9px 14px;border-radius:8px;margin-bottom:10px;border:1px solid var(--line);background:var(--card)}.msg.error{color:var(--warn);border-color:var(--warn)}.msg.success{color:var(--ok);border-color:var(--ok)}
-.field{margin-bottom:11px}.field label{display:block;font-weight:600;margin-bottom:3px}.field .h{color:var(--mute);font-size:.85rem}.err{color:var(--warn)}
-.tag{display:inline-block;padding:1px 8px;border-radius:99px;border:1px solid var(--line);font-size:.85rem}.tag.w{color:var(--warn);border-color:var(--warn)}
-pre{background:var(--bg);border:1px solid var(--line);padding:10px;border-radius:8px;overflow:auto;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all}
-.scroll{overflow-x:auto}
-@media print{nav,.noprint,.btn,button{display:none!important}body{background:#fff;color:#000}.card{border:0;padding:0}main{max-width:none}}
-</style>
+<link rel="preload" href="{% static 'attendance/fonts/heebo-hebrew-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{% static 'attendance/css/app.css' %}">
 </head>
 <body>
+{% with n=request.resolver_match.url_name %}
+<header class="topbar noprint"><div class="topbar-in">
+<a class="brand" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}"><span class="logo">{% include "attendance/_logo.html" %}</span>
+<span>{% if request.session.support_school %}👁 תמיכה (צפייה בלבד){% elif user.is_authenticated and user.is_superuser and not request.school %}ניהול המערכת{% elif request.school %}{{ request.school.name }}{% else %}מערכת נוכחות{% endif %}</span></a>
+<nav class="nav">
 {% if user.is_authenticated %}
-<nav class="noprint">
-<b>{% if request.session.support_school %}👁 תמיכה (צפייה בלבד){% elif user.is_superuser and not request.school %}🛠 ניהול המערכת{% else %}📋 {{ request.school.name|default:"נוכחות" }}{% endif %}</b>
-{% if user.is_superuser %}<a href="{% url 'platform' %}">בתי ספר</a>{% if request.school %}<form method="post" action="{% url 'platform_exit' %}" style="display:inline">{% csrf_token %}<button class="sec">יציאה מבית הספר</button></form>{% endif %}{% endif %}
-{% if request.school %}<a href="{% url 'dashboard' %}">ראשי</a><a href="{% url 'web_report' %}">דיווח באתר</a><a href="{% url 'records' %}">דיווחים</a>
-<a href="{% url 'students' %}">תלמידות</a><a href="{% url 'summary' %}">דוחות</a><a href="{% url 'alerts' %}">התראות</a>
-<a href="{% url 'crud_list' 'rules' %}">כללי התראה</a><a href="{% url 'settings' %}">הגדרות</a><a href="{% url 'plans' %}">מסלולים ותשלום</a><a href="{% url 'help' %}">עזרה</a>{% endif %}
-<form method="post" action="{% url 'logout' %}" style="margin-inline-start:auto">{% csrf_token %}<button class="sec">יציאה</button></form>
-</nav>
+{% if user.is_superuser %}<a href="{% url 'platform' %}" class="{% if n == 'platform' or n == 'platform_create' %}on{% endif %}">🏫 בתי ספר</a>{% endif %}
+{% if request.school %}
+<a href="{% url 'dashboard' %}" class="{% if n == 'dashboard' or n == 'start' %}on{% endif %}">🏠 ראשי</a>
+<a href="{% url 'web_report' %}" class="{% if n == 'web_report' %}on{% endif %}">✍️ דיווח</a>
+<a href="{% url 'records' %}" class="{% if n == 'records' or n == 'record_edit' or n == 'record_new' %}on{% endif %}">📋 דיווחים</a>
+<a href="{% url 'students' %}" class="{% if n == 'students' or n == 'student_edit' or n == 'student_new' or n == 'students_import' or n == 'new_year_page' %}on{% endif %}">👩‍🎓 תלמידות</a>
+<a href="{% url 'summary' %}" class="{% if n == 'summary' %}on{% endif %}">📊 דוחות</a>
+<a href="{% url 'alerts' %}" class="{% if n == 'alerts' %}on{% endif %}">🔔 התראות</a>
+<a href="{% url 'crud_list' 'rules' %}" class="{% if n == 'crud_list' or n == 'crud_edit' or n == 'crud_new' %}on{% endif %}">⚖️ כללי התראה</a>
+<a href="{% url 'settings' %}" class="{% if n == 'settings' %}on{% endif %}">⚙️ הגדרות</a>
+<a href="{% url 'help' %}" class="{% if n == 'help' %}on{% endif %}">🛟 עזרה</a>
 {% endif %}
+{% else %}
+<a href="{% url 'login' %}">כניסה</a><a href="{% url 'register' %}">הרשמה</a>
+{% endif %}
+</nav>
+{% if user.is_authenticated %}
+{% if user.is_superuser and request.school %}<form method="post" action="{% url 'platform_exit' %}">{% csrf_token %}<button class="quiet">חזרה לניהול</button></form>{% endif %}
+<form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="quiet">יציאה</button></form>
+{% endif %}
+</div></header>
+{% endwith %}
 <main>
 {% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
 {% block content %}{% endblock %}

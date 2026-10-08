@@ -1,6 +1,6 @@
-{% extends "attendance/base.html" %}{% block title %}הגישה חסומה{% endblock %}
-{% block content %}<div class="card" style="max-width:520px;margin:40px auto">
-{% if school.status == 'pending' %}<h1>ממתינים לאישור</h1><p>בקשת ההרשמה של <b>{{ school.name }}</b> עדיין בבדיקה. נחזור אליכם בהקדם.</p>
-{% elif school.status == 'suspended' %}<h1>החשבון מושעה</h1><p>הגישה של <b>{{ school.name }}</b> הושעתה. לפרטים פנו לבעלי המערכת.</p>
-{% else %}<h1>אין חשבון משויך</h1><p>המשתמש הזה אינו משויך לבית ספר.</p>{% endif %}
+{% extends "attendance/auth_base.html" %}{% block title %}הגישה חסומה{% endblock %}
+{% block card %}<div style="text-align:center">
+{% if school.status == 'pending' %}<div style="font-size:3rem">⏳</div><h2>ממתינים לאישור</h2><p class="sub">בקשת ההרשמה של <b>{{ school.name }}</b> עדיין בבדיקה. נחזור אליכם בהקדם.</p>
+{% elif school.status == 'suspended' %}<div style="font-size:3rem">⏸️</div><h2>החשבון מושעה</h2><p class="sub">הגישה של <b>{{ school.name }}</b> הושעתה. לפרטים פנו לבעלי המערכת.</p>
+{% else %}<div style="font-size:3rem">🔒</div><h2>אין חשבון משויך</h2><p class="sub">המשתמש הזה אינו משויך לבית ספר.</p>{% endif %}
 <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="sec">יציאה</button></form></div>{% endblock %}

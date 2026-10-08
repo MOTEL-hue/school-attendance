@@ -1,0 +1,31 @@
+{% load static %}<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2b2bb0">
+<title>{% block title %}מערכת נוכחות{% endblock %}</title>
+<link rel="preload" href="{% static 'attendance/fonts/heebo-hebrew-400-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="{% static 'attendance/css/app.css' %}">
+</head>
+<body>
+<div class="auth">
+<aside class="auth-brand">
+  <div class="auth-logo"><span class="logo">{% include "attendance/_logo.html" %}</span> מערכת נוכחות טלפונית</div>
+  <h1>נוכחות בית הספר,<br>בשיחת טלפון אחת</h1>
+  <p class="lead">מקישים מספר זהות, בוחרים איחור או חיסור, וזהו. הכול נרשם, מסוכם ומתריע להורים בלי לרדוף אחרי פתקים.</p>
+  <ul class="feats">
+    <li><span class="fi">📞</span><div><b>דיווח בטלפון</b><span>האמא, המזכירה או המורה מתקשרות ומדווחות בשניות</span></div></li>
+    <li><span class="fi">🔔</span><div><b>התראות חכמות</b><span>צינתוק או הודעה כשתלמידה מגיעה למספר איחורים שקבעתם</span></div></li>
+    <li><span class="fi">📊</span><div><b>דוחות מסודרים</b><span>הדפסה ואקסל, עם תאריך עברי וימי לימוד נכונים</span></div></li>
+  </ul>
+  <div class="auth-foot">🔒 הנתונים של כל בית ספר מבודדים ומוגנים</div>
+</aside>
+<section class="auth-panel">
+  {% for m in messages %}<div class="msg {{ m.tags }}" style="width:100%;max-width:460px">{{ m }}</div>{% endfor %}
+  <div class="auth-card">{% block card %}{% endblock %}</div>
+  <div class="auth-note">{% block note %}<a href="{% url 'terms' %}">תנאי שימוש</a> · <a href="{% url 'privacy' %}">פרטיות</a>{% endblock %}</div>
+</section>
+</div>
+</body>
+</html>

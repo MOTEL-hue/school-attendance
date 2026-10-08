@@ -71,6 +71,7 @@ def dashboard(request):
     steps = onboarding_steps(request)
     ctx["onboarding_left"] = sum(not x["done"] for x in steps)
     ctx["onboarding_total"] = len(steps)
+    ctx["onboarding_pct"] = int(100 * (len(steps) - ctx["onboarding_left"]) / len(steps))
     return render(request, "attendance/dashboard.html", ctx)
 
 

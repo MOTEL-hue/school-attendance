@@ -1,10 +1,11 @@
-{% extends "attendance/base.html" %}{% block title %}הרשמה{% endblock %}
-{% block content %}
-<div class="card" style="max-width:520px;margin:24px auto">
-<h1>הרשמת בית ספר</h1>
-<div class="help">ההרשמה פשוטה: ממלאים פרטים, ואחרי אישור (בדרך כלל תוך יום-יומיים) נכנסים ומתחילים. מערכת הדיווח הטלפוני רצה על קו ימות המשיח שלכם, והחיוב על הקו אצלם. האתר עצמו ללא תשלום בשלב זה.</div>
+{% extends "attendance/auth_base.html" %}{% block title %}הרשמה{% endblock %}
+{% block card %}
+<h2>הרשמת בית ספר ✨</h2><p class="sub">חינם לבית הספר. אחרי האישור נכנסים ומתחילים.</p>
 <form method="post">{% csrf_token %}
-{% for f in form %}<div class="field"><label>{% if f.name != 'accept' %}{{ f.label }}{% endif %}</label>{{ f }}{% if f.name == 'accept' %} {{ f.label }} (<a href="{% url 'terms' %}" target="_blank">תנאי שימוש</a> · <a href="{% url 'privacy' %}" target="_blank">פרטיות</a>){% endif %}{% for e in f.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>{% endfor %}
+{% for f in form %}{% if f.name == 'accept' %}
+<div class="field"><label class="check-row" style="font-weight:500">{{ f }}<span>קראתי ואני מסכים/ה ל<a href="{% url 'terms' %}" target="_blank">תנאי השימוש</a> ול<a href="{% url 'privacy' %}" target="_blank">מדיניות הפרטיות</a></span></label>{% for e in f.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>
+{% else %}<div class="field"><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% for e in f.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>{% endif %}{% endfor %}
 {% for e in form.non_field_errors %}<div class="err">{{ e }}</div>{% endfor %}
 <button>שליחת בקשת הרשמה</button></form>
-<p><a href="{% url 'login' %}">כבר רשומים? כניסה</a></p></div>{% endblock %}
+<div class="auth-links"><a href="{% url 'login' %}">כבר רשומים? <b>כניסה</b></a></div>
+{% endblock %}

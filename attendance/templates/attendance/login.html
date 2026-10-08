@@ -1,12 +1,11 @@
-{% extends "attendance/base.html" %}{% block title %}כניסה{% endblock %}
-{% block content %}
-<div class="card" style="max-width:400px;margin:40px auto">
-<h1>כניסה למערכת הנוכחות</h1>
+{% extends "attendance/auth_base.html" %}{% block title %}כניסה{% endblock %}
+{% block card %}
+<h2>ברוכים הבאים 👋</h2><p class="sub">היכנסו לחשבון בית הספר שלכם</p>
 <form method="post">{% csrf_token %}
-{% for f in form %}<div class="field"><label>{% if f.name == 'username' %}מייל (או admin){% else %}{{ f.label }}{% endif %}</label>{{ f }}</div>{% endfor %}
-{% for e in form.non_field_errors %}<div class="err">{{ e }}</div>{% endfor %}
-{% if form.errors and not form.non_field_errors %}<div class="err">מייל או סיסמה שגויים</div>{% endif %}
+<div class="field"><label for="id_username">מייל</label>{{ form.username }}</div>
+<div class="field"><label for="id_password">סיסמה</label>{{ form.password }}</div>
+{% for e in form.non_field_errors %}<div class="err" style="margin-bottom:8px">{{ e }}</div>{% endfor %}
+{% if form.errors and not form.non_field_errors %}<div class="err" style="margin-bottom:8px">מייל או סיסמה שגויים</div>{% endif %}
 <button>כניסה</button></form>
-<p><a href="{% url 'register' %}">בית ספר חדש? הרשמה</a></p>
-<p class="mute"><a href="{% url 'support_login' %}">כניסת תמיכה עם קוד</a></p>
-</div>{% endblock %}
+<div class="auth-links"><a href="{% url 'register' %}"><b>בית ספר חדש? הרשמה</b></a><a href="{% url 'support_login' %}">כניסת תמיכה</a></div>
+{% endblock %}
