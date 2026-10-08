@@ -1,0 +1,14 @@
+{% extends "attendance/base.html" %}{% block title %}הגדרות לוח שנה{% endblock %}
+{% block content %}
+<h1>⚙️ הגדרות לוח שנה וזמנים</h1>
+<div class="help">כאן בוחרים עיר (לחישוב זמני היום), מנהג הדלקת נרות, ושעות לימוד בקיץ ובחורף. מעבר שעון הקיץ והחורף נעשה <b>אוטומטית</b> לפי תאריכי המעבר הרשמיים בישראל, ואפשר גם לקבוע ידנית.</div>
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+<form method="post" class="card" style="max-width:none">{% csrf_token %}
+{% for f in form %}<div class="field"><label>{{ f.label }}</label>{{ f }}{% if f.help_text %}<div class="h">{{ f.help_text }}</div>{% endif %}{% for e in f.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>{% endfor %}
+<div class="mute" style="margin-bottom:10px">קואורדינטות נדרשות רק בבחירה 'מותאם אישית'. שעות הלימוד אופציונליות ומוצגות ביום הלוח.</div>
+<button>שמירה</button></form>
+<div><div class="card"><h2>היום ב{{ city }}</h2><p>מערכת פעילה: <span class="tag">{{ season }}</span></p><table>{% for l, t in today_rows %}<tr><td>{{ l }}</td><td><b>{{ t }}</b></td></tr>{% endfor %}</table></div>
+<div class="card"><h2>מעברי שעון קרובים</h2>{% for d, s in changes %}<p>{{ d|date:"d/m/Y" }}: מעבר ל{{ s }}</p>{% empty %}<p class="mute">אין</p>{% endfor %}
+<p class="mute">מערכות השעות לקיץ ולחורף מוגדרות ב<a href="{% url 'crud_list' 'lessons' %}">מערכת שעות</a> (בחרו 'קיץ' או 'חורף' לכל שיעור).</p></div></div>
+</div>
+{% endblock %}

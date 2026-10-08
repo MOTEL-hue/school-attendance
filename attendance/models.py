@@ -95,6 +95,17 @@ class SchoolSettings(TenantModel):
     assistant_key_enc = models.TextField(blank=True)
     assistant_model = models.CharField("מודל של העוזר האישי", max_length=60, default="claude-sonnet-5-5")
     extension_done = models.BooleanField("השלוחה הוגדרה בימות המשיח", default=False)
+    SEASON_CHOICES = [("auto", "אוטומטי לפי שעון הקיץ הרשמי"), ("winter", "תמיד מערכת חורף"), ("summer", "תמיד מערכת קיץ")]
+    city_key = models.CharField("עיר (לזמני היום)", max_length=30, default="jerusalem")
+    custom_lat = models.FloatField("קו רוחב (מותאם אישית)", null=True, blank=True)
+    custom_lon = models.FloatField("קו אורך (מותאם אישית)", null=True, blank=True)
+    candle_minutes = models.PositiveSmallIntegerField("הדלקת נרות: דקות לפני השקיעה", default=18)
+    season_mode = models.CharField("מערכת שעות קיץ/חורף", max_length=8, choices=SEASON_CHOICES, default="auto")
+    start_winter = models.TimeField("תחילת לימודים בחורף", null=True, blank=True)
+    start_summer = models.TimeField("תחילת לימודים בקיץ", null=True, blank=True)
+    end_winter = models.TimeField("סיום לימודים בחורף", null=True, blank=True)
+    end_summer = models.TimeField("סיום לימודים בקיץ", null=True, blank=True)
+    friday_end = models.TimeField("סיום לימודים ביום שישי", null=True, blank=True)
 
     class Meta:
         verbose_name = "הגדרות"
@@ -132,16 +143,19 @@ class SchoolSettings(TenantModel):
 
 
 class LessonSlot(TenantModel):
+    SEASONS = [("all", "כל השנה"), ("winter", "חורף"), ("summer", "קיץ")]
+    season = models.CharField("מערכת", max_length=6, choices=SEASONS, default="all")
     number = models.PositiveSmallIntegerField("מספר שיעור")
     start = models.TimeField("התחלה")
     end = models.TimeField("סיום")
 
     class Meta:
-        ordering = ["number"]
-        constraints = [models.UniqueConstraint(fields=["school", "number"], name="uniq_lesson_per_school")]
+        ordering = ["number", "season"]
+        constraints = [models.UniqueConstraint(fields=["school", "number", "season"], name="uniq_lesson_per_school_season")]
 
     def __str__(self):
-        return f"שיעור {self.number} ({self.start:%H:%M}-{self.end:%H:%M})"
+        tag = "" if self.season == "all" else f" · {self.get_season_display()}"
+        return f"שיעור {self.number} ({self.start:%H:%M}-{self.end:%H:%M}){tag}"
 
 
 class NonSchoolDay(TenantModel):
@@ -340,3 +354,50 @@ class PendingAction(TenantModel):
     status = models.CharField(max_length=10, default="pending")  # pending / done / failed / cancelled
     result = models.CharField(max_length=300, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
+
+
+class CalendarEvent(TenantModel):
+    """אירוע בלוח השנה של בית הספר (התחלה מאוחרת, סיום מוקדם, מבחן, טיול ועוד)."""
+
+    LATE_START, EARLY_END, EXAM, TRIP, EVENT = "late_start", "early_end", "exam", "trip", "event"
+    KINDS = [(LATE_START, "התחלת לימודים מאוחרת"), (EARLY_END, "סיום לימודים מוקדם"), (EXAM, "מבחן"),
+             (TRIP, "טיול / פעילות"), (EVENT, "אירוע אחר")]
+    kind = models.CharField("סוג", max_length=10, choices=KINDS, default=EVENT)
+    title = models.CharField("כותרת", max_length=120)
+    date_from = models.DateField("מתאריך")
+    date_to = models.DateField("עד תאריך")
+    time = models.TimeField("שעה (התחלה מאוחרת / סיום מוקדם)", null=True, blank=True)
+    notes = models.CharField("הערות", max_length=300, blank=True)
+    announce_banner = models.BooleanField("להציג כהודעה באתר", default=True)
+    announce_phone = models.BooleanField("להשמיע בטלפון למי שמתקשרת", default=True)
+    class_filter = models.ForeignKey(SchoolClass, null=True, blank=True, on_delete=models.CASCADE,
+                                     verbose_name="רק לכיתה (ריק = כולן)")
+
+    class Meta:
+        ordering = ["date_from", "kind"]
+
+    def __str__(self):
+        return f"{self.title} ({self.date_from:%d/%m/%Y})"
+
+    def spoken_text(self, when=""):
+        """נוסח קצר להשמעה בטלפון ולהצגה באתר ('היום' / 'מחר' אופציונלי)."""
+        pre = f"שימו לב {when} ".replace("  ", " ")
+        if self.kind == self.LATE_START and self.time:
+            return f"{pre}{self.title}: הלימודים יתחילו בשעה {self.time:%H:%M}"
+        if self.kind == self.EARLY_END and self.time:
+            return f"{pre}{self.title}: הלימודים יסתיימו בשעה {self.time:%H:%M}"
+        return f"{pre}{self.title}"
+
+
+class MessageLog(TenantModel):
+    """תיעוד שליחת הודעה להורים (צינתוק / שיחה קולית)."""
+
+    event = models.ForeignKey(CalendarEvent, null=True, on_delete=models.SET_NULL, related_name="messages")
+    channel = models.CharField(max_length=10)  # tzintuk / voice
+    recipients = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=200, blank=True)
+    text = models.CharField(max_length=300, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created_at"]

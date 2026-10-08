@@ -1,0 +1,21 @@
+{% extends "attendance/base.html" %}{% block title %}לוח שנה{% endblock %}
+{% block content %}
+<div class="hello"><div><h1>📅 לוח שנה</h1><p class="mute">{{ title }} · {{ hebrew_range }} · {{ city }} · <span class="tag">{{ season }}</span></p></div>
+<div class="noprint"><a class="btn" href="{% url 'event_new' %}">+ אירוע</a> <a class="btn sec" href="{% url 'zmanim_table' %}?y={{ prev.year }}&m={{ prev.month }}">🕐 טבלת זמנים</a> <a class="btn sec" href="{% url 'holidays_auto' %}">🎉 חגים אוטומטי</a> <a class="btn sec" href="{% url 'calendar_settings' %}">⚙️ הגדרות</a></div></div>
+<div class="help">לוח שנה לועזי ועברי עם חגים, חופשות ואירועי בית הספר. לחצו על יום כדי לראות זמני היום, מערכת שעות ולהוסיף אירוע, כמו <b>התחלת לימודים מאוחרת</b> שאפשר גם לשלוח להורים.</div>
+<div class="cal-nav noprint"><a class="btn sec" href="?y={{ prev.year }}&m={{ prev.month }}">→ חודש קודם</a><a class="btn sec" href="{% url 'calendar' %}">היום</a><a class="btn sec" href="?y={{ next.year }}&m={{ next.month }}">חודש הבא ←</a></div>
+<div class="card scroll cal-wrap"><table class="cal">
+<tr>{% for h in dayheads %}<th>{{ h }}</th>{% endfor %}</tr>
+{% for week in weeks %}<tr>{% for c in week %}
+<td class="{% if not c.in_month %}out{% endif %} {% if c.today %}today{% endif %} {% if c.off_name or c.weekend_off %}off{% endif %}">
+<a class="cell" href="{% url 'calendar_day' c.date|date:'Y-m-d' %}">
+<span class="dn">{{ c.date.day }}</span><span class="hd">{{ c.hday }}</span>
+{% if c.festival %}<span class="chip fest">{{ c.festival }}</span>{% elif c.rc %}<span class="chip rc">ר״ח</span>{% endif %}
+{% if c.parsha %}<span class="chip par">{{ c.parsha }}</span>{% endif %}
+{% if c.off_name %}<span class="chip offc">🚫 {{ c.off_name }}</span>{% endif %}
+{% for e in c.events %}<span class="chip" style="--c:{{ e.color }}">{% if e.e.time %}{{ e.e.time|time:"H:i" }} {% endif %}{{ e.e.title }}</span>{% endfor %}
+{% if c.dst %}<span class="chip dst">{% if c.dst == 'summer' %}☀️ שעון קיץ{% else %}❄️ שעון חורף{% endif %}</span>{% endif %}
+</a></td>{% endfor %}</tr>{% endfor %}
+</table></div>
+<p class="mute noprint">{% for color, name in legend %}<span class="lg" style="--c:{{ color }}">■</span> {{ name }} &nbsp;{% endfor %} <span class="lg" style="--c:#8a97b2">■</span> חופשה / יום שלא נספר</p>
+{% endblock %}

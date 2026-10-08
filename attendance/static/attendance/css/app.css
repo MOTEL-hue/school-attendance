@@ -138,3 +138,22 @@ hr{border:0;border-top:1px solid var(--line)}
 @media (max-width:560px){.kpis{grid-template-columns:1fr 1fr;gap:10px}.kpi{padding:12px 12px;gap:10px;flex-direction:column;align-items:flex-start}.kpi .num{font-size:1.8rem}.kpi .ico{width:42px;height:42px;font-size:1.3rem}.hello .btn{padding:8px 12px}}
 @media (max-width:760px){.topbar-in{flex-wrap:wrap}.nav{order:3;flex-basis:100%}main{padding:18px 12px 90px}h1{font-size:1.5rem}}
 @media print{.topbar,.noprint,.btn,button{display:none!important}body{background:#fff!important;color:#000}.card,.kpi{box-shadow:none;border:0}main{max-width:none;padding:0}}
+
+/* ---------- לוח שנה ---------- */
+.cal-nav{display:flex;gap:10px;justify-content:space-between;margin-bottom:12px}
+.cal-wrap{padding:6px}
+table.cal{table-layout:fixed;min-width:760px;border-collapse:separate;border-spacing:4px}
+table.cal th{background:transparent;text-align:center;color:var(--mute);font-size:.9rem;border:0}
+table.cal td{padding:0;border:1px solid var(--line);border-radius:12px;background:var(--card);height:112px;vertical-align:top;overflow:hidden}
+table.cal td:hover{background:var(--soft)}
+table.cal td.out{opacity:.45}table.cal td.off{background:repeating-linear-gradient(135deg,var(--soft),var(--soft) 8px,var(--card) 8px,var(--card) 16px)}
+table.cal td.today{border:2px solid var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 16%,transparent)}
+a.cell{display:block;height:100%;padding:6px 7px;color:inherit;text-decoration:none}a.cell:hover{text-decoration:none}
+.dn{font-weight:800;font-size:1.05rem}.hd{color:var(--mute);font-size:.8rem;margin-inline-start:6px}
+.chip{display:block;margin-top:3px;font-size:.74rem;line-height:1.25;padding:1px 6px;border-radius:7px;background:color-mix(in srgb,var(--c,var(--brand)) 15%,var(--card));color:var(--c,var(--brand));font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.fest{--c:#b7791f}.chip.rc{--c:#7a4df0}.chip.par{--c:#5d6b86;font-weight:500}.chip.offc{--c:#d93025}.chip.dst{--c:#0f9d58}
+.lg{color:var(--c)}.evrow{padding:8px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+table.zt{font-size:.88rem}table.zt tr.hl td{background:color-mix(in srgb,var(--amber) 9%,transparent)}
+.banner-ev{display:flex;gap:10px;align-items:center}
+@media (max-width:760px){table.cal td{height:96px}}
+@media print{table.cal td{height:90px}}

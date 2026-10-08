@@ -2,7 +2,7 @@ from datetime import date
 
 from django import forms
 
-from .models import (WEEKDAYS, AlertRule, Attendance, AuthorizedCaller, Contact, LessonSlot, NonSchoolDay,
+from .models import (WEEKDAYS, CalendarEvent, AlertRule, Attendance, AuthorizedCaller, Contact, LessonSlot, NonSchoolDay,
                      SchoolClass, SchoolSettings, Student)
 
 DATE = forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
@@ -132,13 +132,19 @@ class HolidayForm(forms.ModelForm):
         widgets = {"date_from": DATE, "date_to": DATE}
 
 
-class LessonForm(UniqueInSchoolMixin, forms.ModelForm):
-    unique_check = ("number",)
-
+class LessonForm(forms.ModelForm):
     class Meta:
         model = LessonSlot
-        fields = ["number", "start", "end"]
+        fields = ["season", "number", "start", "end"]
         widgets = {"start": TIME, "end": TIME}
+
+    def clean(self):
+        d = super().clean()
+        if d.get("number") is not None and d.get("season"):
+            clash = LessonSlot.objects.filter(number=d["number"], season=d["season"]).exclude(pk=self.instance.pk)
+            if clash.exists():
+                self.add_error("number", "שיעור במספר הזה כבר קיים באותה מערכת")
+        return d
 
 
 class RuleForm(forms.ModelForm):
@@ -163,3 +169,35 @@ class RecordForm(forms.ModelForm):
 
 class ImportForm(forms.Form):
     file = forms.FileField(label="קובץ אקסל (xlsx) או CSV")
+
+
+class CalendarEventForm(forms.ModelForm):
+    class Meta:
+        model = CalendarEvent
+        fields = ["kind", "title", "date_from", "date_to", "time", "notes", "class_filter", "announce_banner",
+                  "announce_phone"]
+        widgets = {"date_from": DATE, "date_to": DATE, "time": TIME}
+
+    def clean(self):
+        d = super().clean()
+        if d.get("date_from") and d.get("date_to") and d["date_to"] < d["date_from"]:
+            self.add_error("date_to", "תאריך הסיום לפני תאריך ההתחלה")
+        if d.get("kind") in ("late_start", "early_end") and not d.get("time"):
+            self.add_error("time", "בהתחלה מאוחרת או סיום מוקדם צריך לציין שעה")
+        return d
+
+
+class CalendarSettingsForm(forms.ModelForm):
+    from .zmanim import CANDLE_CHOICES, CITY_CHOICES
+    city_key = forms.ChoiceField(label="עיר (לחישוב זמני היום)", choices=CITY_CHOICES)
+    candle_minutes = forms.ChoiceField(label="מנהג הדלקת נרות", choices=CANDLE_CHOICES,
+                                       help_text="כמה דקות לפני השקיעה מדליקים נרות. ביישובים רבים 18, בירושלים 40.")
+
+    class Meta:
+        model = SchoolSettings
+        fields = ["city_key", "custom_lat", "custom_lon", "candle_minutes", "season_mode", "start_winter", "end_winter",
+                  "start_summer", "end_summer", "friday_end"]
+        widgets = {k: TIME for k in ("start_winter", "end_winter", "start_summer", "end_summer", "friday_end")}
+
+    def clean_candle_minutes(self):
+        return int(self.cleaned_data["candle_minutes"])

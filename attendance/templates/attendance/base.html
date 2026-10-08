@@ -22,6 +22,7 @@
 <a href="{% url 'records' %}" class="{% if n == 'records' or n == 'record_edit' or n == 'record_new' %}on{% endif %}">📋 דיווחים</a>
 <a href="{% url 'students' %}" class="{% if n == 'students' or n == 'student_edit' or n == 'student_new' or n == 'students_import' or n == 'new_year_page' %}on{% endif %}">👩‍🎓 תלמידות</a>
 <a href="{% url 'summary' %}" class="{% if n == 'summary' %}on{% endif %}">📊 דוחות</a>
+<a href="{% url 'calendar' %}" class="{% if n == 'calendar' or n == 'calendar_day' or n == 'event_new' or n == 'event_edit' or n == 'event_send' or n == 'calendar_settings' or n == 'zmanim_table' or n == 'holidays_auto' %}on{% endif %}">📅 לוח שנה</a>
 <a href="{% url 'alerts' %}" class="{% if n == 'alerts' %}on{% endif %}">🔔 התראות</a>
 <a href="{% url 'crud_list' 'rules' %}" class="{% if n == 'crud_list' or n == 'crud_edit' or n == 'crud_new' %}on{% endif %}">⚖️ כללי התראה</a>
 <a href="{% url 'settings' %}" class="{% if n == 'settings' %}on{% endif %}">⚙️ הגדרות</a>
@@ -39,6 +40,7 @@
 {% endwith %}
 <main>
 {% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}
+{% for n in cal_notices %}<div class="msg info banner-ev noprint">📣 <div><b>{{ n.when }}:</b> {{ n.text }}</div> <a href="{% url 'calendar_day' n.iso %}" style="margin-inline-start:auto">לפרטים</a></div>{% endfor %}
 {% block content %}{% endblock %}
 </main>
 {% if user.is_authenticated and not request.session.support_school %}{% include "attendance/assistant_widget.html" %}{% endif %}

@@ -9,12 +9,14 @@ import logging
 from datetime import timedelta
 
 from .alerts import counts_for, pending_announcements, window_range  # noqa: F401
+from datetime import timedelta as _td
+
 from .calendar_utils import now_il, today_il
-from .models import Attendance, AuthorizedCaller, Contact, SchoolSettings, Student, clean_phone, hash_pin
+from .models import Attendance, AuthorizedCaller, CalendarEvent, Contact, SchoolSettings, Student, clean_phone, hash_pin
 from .services import create_record, parse_hhmm
 
 log = logging.getLogger(__name__)
-_BAD = str.maketrans({c: " " for c in ".,=&"})
+_BAD = str.maketrans({c: " " for c in ".,=&:"})
 
 
 def t(text):
@@ -37,6 +39,15 @@ def name_parts(student, s):
     if student.name_recorded and s.phone_dir:
         return [f"f-{s.phone_dir}/name_{student.tz}"]
     return [t(student.full_name)]
+
+
+def announcement_parts():
+    """הודעות לוח שנה להשמעה בתחילת השיחה (התחלה מאוחרת, סיום מוקדם...), להיום ולמחר."""
+    today = today_il()
+    out = []
+    for ev in CalendarEvent.objects.filter(announce_phone=True, date_from__lte=today + _td(days=1), date_to__gte=today)[:3]:
+        out.append(t(ev.spoken_text("היום" if ev.date_from <= today else "מחר")))
+    return out
 
 
 def find_caller(phone):
@@ -104,7 +115,8 @@ def _handle(p):
     for i in range(1, 4):
         var = f"tz{r}_{i}"
         if var not in p:
-            return ask_digits([t("הקישו מספר זהות של התלמידה" if i == 1 else "מספר הזהות לא מוכר הקישו שוב")],
+            intro = announcement_parts() if (r == 1 and i == 1) else []
+            return ask_digits(intro + [t("הקישו מספר זהות של התלמידה" if i == 1 else "מספר הזהות לא מוכר הקישו שוב")],
                               var, 9, 5, 15, "Digits")
         student = lookup_student(p[var], allowed)
         if student:

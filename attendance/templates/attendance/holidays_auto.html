@@ -1,0 +1,10 @@
+{% extends "attendance/base.html" %}{% block title %}חגים אוטומטי{% endblock %}
+{% block content %}
+<h1>🎉 הוספת חגים וחופשות אוטומטית</h1>
+<div class="help">המערכת מחשבת את החגים והתעניות של שנת הלימודים לפי הלוח העברי (לוח ישראל), ואתם בוחרים אילו להוסיף כימים ללא לימודים. חיסור שחל בהם לא נספר. החגים המרכזיים מסומנים מראש, והשאר (חנוכה, פורים, ל״ג בעומר ועוד) לבחירתכם. חופשות ארוכות כמו חופשת קיץ מוסיפים ידנית ב<a href="{% url 'crud_list' 'holidays' %}">חופשות וחגים</a>.</div>
+<p class="noprint">שנת לימודים: {% for y in years %}<a class="btn {% if y != year %}sec{% endif %}" href="?year={{ y }}">{{ y }}-{{ y|add:1 }}</a> {% endfor %}</p>
+<form method="post" class="card" style="max-width:none">{% csrf_token %}
+<table><tr><th></th><th>חג</th><th>תאריכים</th><th>עברי</th></tr>
+{% for g in props %}<tr><td><input type="checkbox" name="pick" value="{{ g.id }}" {% if g.default and not g.exists %}checked{% endif %} {% if g.exists %}disabled{% endif %}></td><td><b>{{ g.name }}</b>{% if g.exists %} <span class="tag">כבר קיים</span>{% endif %}</td><td>{{ g.from|date:"d/m/Y" }}{% if g.to != g.from %} - {{ g.to|date:"d/m/Y" }}{% endif %}</td><td class="mute">{{ g.hebrew }}</td></tr>{% endfor %}</table>
+<p><button>הוספת הנבחרים</button></p></form>
+{% endblock %}

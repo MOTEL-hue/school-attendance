@@ -2,6 +2,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from . import views as v
+from . import views_calendar as vc
 from . import views_platform as vp
 from . import views_public as vpub
 
@@ -45,6 +46,15 @@ urlpatterns = [
     path("manage/<str:kind>/new/", v.crud_edit, name="crud_new"),
     path("manage/<str:kind>/<int:pk>/", v.crud_edit, name="crud_edit"),
     path("manage/<str:kind>/<int:pk>/delete/", v.crud_delete, name="crud_delete"),
+    path("calendar/", vc.calendar_month, name="calendar"),
+    path("calendar/day/<str:iso>/", vc.calendar_day, name="calendar_day"),
+    path("calendar/event/new/", vc.event_edit, name="event_new"),
+    path("calendar/event/<int:pk>/", vc.event_edit, name="event_edit"),
+    path("calendar/event/<int:pk>/delete/", vc.event_delete, name="event_delete"),
+    path("calendar/event/<int:pk>/send/", vc.event_send, name="event_send"),
+    path("calendar/settings/", vc.calendar_settings, name="calendar_settings"),
+    path("calendar/zmanim/", vc.zmanim_table, name="zmanim_table"),
+    path("calendar/holidays/", vc.holidays_auto, name="holidays_auto"),
     path("audit/", v.audit_page, name="audit"),
     path("backup/", v.backup, name="backup"),
     path("help/", v.help_page, name="help"),

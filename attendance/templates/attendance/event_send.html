@@ -1,0 +1,19 @@
+{% extends "attendance/base.html" %}{% block title %}שליחה להורים{% endblock %}
+{% block content %}
+<h1>📣 {{ ev.title }}</h1>
+<div class="help">האירוע נשמר: <b>{{ ev.get_kind_display }}</b> בתאריך {{ ev.date_from|date:"d/m/Y" }}{% if ev.time %} בשעה {{ ev.time|time:"H:i" }}{% endif %}.
+כבר מוצג כהודעה באתר{% if ev.announce_phone %} ומושמע בטלפון לכל מי שמתקשרת{% endif %} (חינם). כאן אפשר לשלוח אותו גם ישירות להורים.</div>
+<form method="post" class="card">{% csrf_token %}
+<div class="field"><label>נוסח ההודעה (להקראה בשיחה קולית)</label><textarea name="text" rows="3" style="width:100%">{{ text }}</textarea></div>
+<div class="field"><label><input type="radio" name="parents_only" value="1" {% if parents_only %}checked{% endif %}> רק טלפונים של אמא ואבא</label>
+<label><input type="radio" name="parents_only" value="0" {% if not parents_only %}checked{% endif %}> כל הטלפונים שבכרטיסי התלמידות</label>
+<div class="h">{% if ev.class_filter %}כיתה: {{ ev.class_filter }}. {% endif %}נמענים (מספרים ייחודיים): <b>{{ count }}</b></div></div>
+<div class="field"><label>ערוץ שליחה</label>
+<label style="font-weight:500"><input type="checkbox" name="tzintuk" {% if not has_yemot %}disabled{% endif %}> 📞 <b>צינתוק</b>: צלצול קצר שמתנתק, ההורים יודעים להיכנס לבדוק. זול: כ-0.1 יחידה למספר בימות המשיח.</label>
+<label style="font-weight:500"><input type="checkbox" name="voice" {% if not has_template %}disabled{% endif %}> 🔊 <b>שיחה קולית</b> עם הקראת ההודעה. יקר יותר.{% if not has_template %} <span class="err">דורש מזהה תבנית קמפיין בהגדרות.</span>{% endif %}</label>
+{% if not has_yemot %}<div class="err">חסרים מספר מערכת וסיסמה של ימות המשיח ב<a href="{% url 'settings' %}">הגדרות</a>.</div>{% endif %}</div>
+<div class="msg error" style="margin:10px 0">⚠️ השליחה עולה יחידות בחשבון ימות המשיח <b>שלכם</b> ואי אפשר לבטל אותה אחרי שנשלחה.</div>
+<div class="field"><label style="font-weight:500"><input type="checkbox" name="confirm"> אני מאשר/ת לשלוח ל-{{ count }} נמענים</label></div>
+<button>שליחה</button> <a class="btn sec" href="{% url 'calendar_day' ev.date_from|date:'Y-m-d' %}">חזרה ליום</a></form>
+{% if log %}<h2>שליחות קודמות</h2><div class="card scroll"><table><tr><th>מתי</th><th>ערוץ</th><th>נמענים</th><th>סטטוס</th></tr>{% for m in log %}<tr><td>{{ m.created_at|date:"d/m/Y H:i" }}</td><td>{% if m.channel == 'tzintuk' %}צינתוק{% else %}שיחה קולית{% endif %}</td><td>{{ m.recipients }}</td><td>{{ m.status }}</td></tr>{% endfor %}</table></div>{% endif %}
+{% endblock %}

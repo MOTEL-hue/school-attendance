@@ -12,6 +12,10 @@
 <div class="kpi" style="--c:#7a4df0"><div class="ico">🔔</div><div><div class="num">{{ open_alerts_count }}</div><div class="lbl"><a href="{% url 'alerts' %}">התראות פתוחות</a></div></div></div>
 <div class="kpi" style="--c:#0f9d58"><div class="ico">👩‍🎓</div><div><div class="num">{{ students }}</div><div class="lbl"><a href="{% url 'students' %}">תלמידות פעילות</a></div></div></div>
 </div>
+<div class="card"><div class="row" style="justify-content:space-between;align-items:center">
+<div><b>🗓️ {{ day.lab.weekday }}, {{ day.lab.hebrew }}</b>{% if day.lab.festival %} · <span class="tag">{{ day.lab.festival }}</span>{% endif %}{% if day.lab.rosh_chodesh %} <span class="tag">ראש חודש</span>{% endif %}{% if day.lab.parsha %} <span class="tag">פרשת {{ day.lab.parsha }}</span>{% endif %}
+<span class="mute"> · {{ day.city }} · {{ day.season }}</span></div><a class="btn sec noprint" href="{% url 'calendar' %}">📅 ללוח השנה</a></div>
+<p style="margin:8px 0 0">{% for l, t in day.times %}<span class="tag" style="margin-inline-end:6px">{{ l }}: <b>{{ t }}</b></span>{% endfor %}</p></div>
 {% if unmatched %}<div class="msg error">❓ יש {{ unmatched }} דיווחים לא מזוהים שממתינים לטיפול. <a href="{% url 'records' %}?unmatched=1"><b>לטיפול</b></a></div>{% endif %}
 {% if not students %}<div class="help">עוד אין תלמידות במערכת. התחילו ב<a href="{% url 'crud_list' 'classes' %}">הוספת כיתות</a> ואז <a href="{% url 'students_import' %}">ייבוא תלמידות מאקסל</a>. פירוט מלא בעמוד <a href="{% url 'help' %}">עזרה</a>.</div>{% endif %}
 {% if open_alerts %}<h2>התראות שדורשות טיפול</h2><div class="card scroll"><table>

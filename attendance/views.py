@@ -68,6 +68,13 @@ def dashboard(request):
         "students": Student.objects.filter(active=True).count(),
         "s": SchoolSettings.get(),
     }
+    from . import zmanim as zm
+    sch = ctx["s"]
+    z, lab = zm.zmanim_for(sch, today), zm.day_label(today)
+    ctx["day"] = {"lab": lab, "season": zm.season_label(zm.season_for(sch, today)),
+                  "city": zm.CITIES.get(sch.city_key, zm.CITIES["jerusalem"])[0],
+                  "times": [(label, z[k].strftime("%H:%M")) for k, label in zm.ZMAN_ROWS
+                            if k in ("hanetz", "shma_gra", "chatzos", "shkia", "candle", "havdalah") and z.get(k)]}
     steps = onboarding_steps(request)
     ctx["onboarding_left"] = sum(not x["done"] for x in steps)
     ctx["onboarding_total"] = len(steps)

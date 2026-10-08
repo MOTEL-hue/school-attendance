@@ -9,7 +9,7 @@ from django.forms.models import model_to_dict
 
 from . import alerts, yemot_client
 from .calendar_utils import hebrew_date, today_il
-from .forms import ClassForm, HolidayForm, LessonForm, RuleForm
+from .forms import CalendarEventForm, ClassForm, HolidayForm, LessonForm, RuleForm
 from .models import (Alert, AlertRule, Attendance, AuthorizedCaller, Contact, LessonSlot, NonSchoolDay,
                      PendingAction, SchoolClass, SchoolSettings, Student)
 from .reports import summary_rows
@@ -86,6 +86,11 @@ TOOLS = [
           ["name", "date_from", "date_to"]),
     _tool("propose_add_lesson", "מציע הוספת שיעור למערכת השעות (HH:MM).", {"number": I, "start": S, "end": S},
           ["number", "start", "end"]),
+    _tool("upcoming_events", "אירועי לוח השנה ב-30 הימים הקרובים (התחלה מאוחרת, סיום מוקדם, מבחנים...) + זמני היום ועונת השעון."),
+    _tool("propose_calendar_event", "מציע הוספת אירוע ללוח השנה. kind: late_start/early_end (חובה שעה HH:MM), exam, trip, event. תאריכים YYYY-MM-DD.",
+          {"kind": {"type": "string", "enum": ["late_start", "early_end", "exam", "trip", "event"]}, "title": S,
+           "date_from": S, "date_to": S, "time": S, "notes": S, "announce_banner": B, "announce_phone": B},
+          ["kind", "title", "date_from"]),
     _tool("propose_add_class", "מציע הוספת כיתה.", {"name": S, "order": I}, ["name"]),
     _tool("propose_setup_extension", "מציע להגדיר/לעדכן אוטומטית את שלוחת ה-API בימות המשיח (לפי phone_dir בהגדרות)."),
 ]
@@ -197,7 +202,22 @@ def t_test_yemot(args, ctx):
         return {"ok": False, "error": str(e)}
 
 
-READ_TOOLS = {"get_settings": t_get_settings, "list_config": t_list_config, "find_students": t_find_students,
+def t_upcoming_events(args, ctx):
+    from datetime import timedelta
+    from . import zmanim as zm
+    from .models import CalendarEvent
+    today = today_il()
+    sch = SchoolSettings.get()
+    z = zm.zmanim_for(sch, today)
+    return {"today": f"{today:%Y-%m-%d}", "hebrew": zm.day_label(today)["hebrew"], "season": zm.season_label(zm.season_for(sch, today)),
+            "city": zm.CITIES.get(sch.city_key, zm.CITIES["jerusalem"])[0],
+            "zmanim_today": {k: z[k].strftime("%H:%M") for k in ("hanetz", "chatzos", "shkia", "tzais") if z.get(k)},
+            "events": [{"title": e.title, "kind": e.kind, "from": str(e.date_from), "to": str(e.date_to),
+                        "time": e.time.strftime("%H:%M") if e.time else ""}
+                       for e in CalendarEvent.objects.filter(date_from__lte=today + timedelta(days=30), date_to__gte=today)[:30]]}
+
+
+READ_TOOLS = {"upcoming_events": t_upcoming_events, "get_settings": t_get_settings, "list_config": t_list_config, "find_students": t_find_students,
               "ranking": t_ranking, "recent_alerts": t_recent_alerts, "data_health": t_data_health,
               "test_yemot": t_test_yemot}
 
@@ -276,6 +296,13 @@ def propose(tool, args):
         if not f.is_valid():
             raise ValueError("שיעור לא תקין (מספר ייחודי, שעות HH:MM)")
         return f"הוספת שיעור {args['number']}: {args['start']}-{args['end']}", args
+    if tool == "propose_calendar_event":
+        data = {"announce_banner": True, "announce_phone": True, **args}
+        data.setdefault("date_to", data["date_from"])
+        f = CalendarEventForm(data)
+        if not f.is_valid():
+            raise ValueError("אירוע לא תקין: " + "; ".join(f"{k}: {' '.join(e)}" for k, e in f.errors.items()))
+        return f"הוספת אירוע ללוח: {args['title']} ב-{data['date_from']}" + (f" בשעה {args['time']}" if args.get("time") else ""), data
     if tool == "propose_add_class":
         f = ClassForm({"order": 0, **args})
         if not f.is_valid():
@@ -308,6 +335,9 @@ def execute(action, base_url, actor_name="עוזר אישי", phone_secret=""):
     elif tool == "propose_add_lesson":
         LessonForm(a).save()
         msg = "השיעור נוסף"
+    elif tool == "propose_calendar_event":
+        CalendarEventForm(a).save()
+        msg = "האירוע נוסף ללוח השנה (לשליחה להורים: לוח שנה, ביום האירוע)"
     elif tool == "propose_add_class":
         ClassForm({"order": 0, **a}).save()
         msg = "הכיתה נוספה"

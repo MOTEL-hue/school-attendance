@@ -1,0 +1,7 @@
+{% extends "attendance/base.html" %}{% block title %}טבלת זמנים{% endblock %}
+{% block content %}
+<div class="hello"><div><h1>🕐 טבלת זמנים: {{ title }}</h1><p class="mute">{{ school }} · {{ city }}</p></div>
+<div class="noprint"><a class="btn sec" href="?y={{ prev.year }}&m={{ prev.month }}">→ קודם</a> <a class="btn sec" href="?y={{ next.year }}&m={{ next.month }}">הבא ←</a> <a class="btn sec" href="?y={{ y }}&m={{ m }}&export=xlsx">אקסל</a> <button class="sec" onclick="print()">הדפסה</button></div></div>
+<div class="card scroll"><table class="zt"><tr><th>תאריך</th><th>עברי</th><th>יום</th><th>מועד</th>{% for k, l in cols %}<th>{{ l }}</th>{% endfor %}</tr>
+{% for r in data %}<tr class="{% if r.d.weekday == 5 or r.lab.festival %}hl{% endif %}"><td>{{ r.d|date:"d/m" }}</td><td>{{ r.lab.hebrew }}</td><td>{{ r.lab.weekday }}</td><td>{{ r.lab.festival }}{% if r.lab.parsha %}{{ r.lab.parsha }}{% endif %}{% if r.lab.rosh_chodesh %} ר״ח{% endif %}</td>{% for c in r.cells %}<td>{{ c }}</td>{% endfor %}</tr>{% endfor %}</table></div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "attendance/base.html" %}{% block title %}{{ both }}{% endblock %}
+{% block content %}
+<div class="hello"><div><h1>{{ lab.weekday }}, {{ lab.hebrew }}</h1><p class="mute">{{ d|date:"d/m/Y" }} · {{ city }} · <span class="tag">{{ season }}</span>{% if lab.festival %} · <b>{{ lab.festival }}</b>{% endif %}{% if lab.rosh_chodesh %} · ראש חודש{% endif %}{% if lab.parsha %} · פרשת {{ lab.parsha }}{% endif %}</p></div>
+<div class="noprint"><a class="btn sec" href="{% url 'calendar_day' prev|date:'Y-m-d' %}">→ אתמול</a> <a class="btn sec" href="{% url 'calendar' %}?y={{ d.year }}&m={{ d.month }}">📅 לחודש</a> <a class="btn sec" href="{% url 'calendar_day' next|date:'Y-m-d' %}">מחר ←</a></div></div>
+{% if off %}<div class="msg error">🚫 {{ off.name }}: אין לימודים (חיסורים לא נספרים).</div>{% elif not is_school_day %}<div class="msg info">היום אינו יום לימודים לפי ההגדרות (ימי שבוע שלא נספרים).</div>{% endif %}
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+<div class="card"><h2>🕐 זמני היום</h2><table>{% for label, t in rows %}<tr><td>{{ label }}</td><td><b>{{ t }}</b></td></tr>{% endfor %}</table></div>
+<div>
+<div class="card"><h2>🏫 יום לימודים</h2>
+{% if start or end %}<p>שעות לימוד ({{ season }}): <b>{{ start|time:"H:i"|default:"?" }} - {{ end|time:"H:i"|default:"?" }}</b></p>{% else %}<p class="mute">לא הוגדרו שעות לימוד. <a href="{% url 'calendar_settings' %}">להגדרה</a></p>{% endif %}
+{% if lessons %}<table>{% for l in lessons %}<tr><td>שיעור {{ l.number }}</td><td>{{ l.start|time:"H:i" }} - {{ l.end|time:"H:i" }}</td></tr>{% endfor %}</table>{% else %}<p class="mute">אין מערכת שעות. <a href="{% url 'crud_list' 'lessons' %}">להגדרה</a></p>{% endif %}
+<p class="mute">דיווחים ביום הזה: {{ counts.late }} איחורים · {{ counts.absent }} חיסורים</p></div>
+<div class="card"><h2>📣 אירועים</h2>
+{% for e in events %}<div class="evrow"><b>{{ e.title }}</b> <span class="tag">{{ e.get_kind_display }}</span>{% if e.time %} <span class="tag">{{ e.time|time:"H:i" }}</span>{% endif %}
+<span class="noprint"><a href="{% url 'event_edit' e.pk %}">עריכה</a>{% if e.kind == 'late_start' or e.kind == 'early_end' %} · <a href="{% url 'event_send' e.pk %}">שליחה להורים</a>{% endif %}</span></div>
+{% empty %}<p class="mute">אין אירועים ביום הזה.</p>{% endfor %}
+<p class="noprint"><a class="btn" href="{% url 'event_new' %}?date={{ d|date:'Y-m-d' }}&kind=late_start">⏰ התחלה מאוחרת</a> <a class="btn sec" href="{% url 'event_new' %}?date={{ d|date:'Y-m-d' }}&kind=early_end">סיום מוקדם</a> <a class="btn sec" href="{% url 'event_new' %}?date={{ d|date:'Y-m-d' }}">+ אירוע אחר</a></p></div>
+</div></div>
+{% endblock %}
