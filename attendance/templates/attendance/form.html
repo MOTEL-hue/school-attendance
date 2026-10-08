@@ -1,0 +1,9 @@
+{% extends "attendance/base.html" %}{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>{% if help %}<div class="help">{{ help }}</div>{% endif %}
+<form method="post" class="card">{% csrf_token %}
+{% for f in form %}<div class="field"><label>{{ f.label }}</label>{{ f }}{% if f.help_text %}<div class="h">{{ f.help_text }}</div>{% endif %}{% for e in f.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>{% endfor %}
+{{ form.non_field_errors }}
+<button>שמירה</button> <a class="btn sec" href="javascript:history.back()">ביטול</a></form>
+{% if delete %}<form method="post" action="{% url delete.0 delete.1 delete.2 %}" onsubmit="return confirm('למחוק?')">{% csrf_token %}<button class="danger">מחיקה</button></form>{% endif %}
+{% endblock %}

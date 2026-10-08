@@ -1,0 +1,7 @@
+{% extends "attendance/base.html" %}{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1><div class="help">{{ help }}</div>
+<p><a class="btn" href="{% url 'crud_new' kind %}">+ הוספה</a></p>
+<div class="card"><table>{% for o in rows %}<tr><td>{{ o }}{% if kind == 'rules' and not o.active %} <span class="tag">כבויה</span>{% endif %}</td><td style="width:70px"><a href="{% url 'crud_edit' kind o.pk %}">עריכה</a></td></tr>{% empty %}<tr><td class="mute">עדיין אין פריטים</td></tr>{% endfor %}</table></div>
+{% if kind == 'holidays' or kind == 'lessons' %}<p class="mute">ימי השבוע שלא נספרים (שישי, שבת...) מוגדרים ב<a href="{% url 'settings' %}">הגדרות</a>.</p>{% endif %}
+{% endblock %}

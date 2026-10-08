@@ -1,0 +1,20 @@
+{% extends "attendance/base.html" %}{% block title %}עזרה ותמיכה{% endblock %}
+{% block content %}
+<h1>עזרה ותמיכה</h1>
+<div class="card"><h2>איך מתחילים</h2><ol>
+<li><a href="{% url 'crud_list' 'classes' %}">כיתות</a> - מוסיפים כיתות.</li>
+<li><a href="{% url 'students_import' %}">ייבוא תלמידות</a> מאקסל (או הוספה ידנית), כולל טלפוני הורים.</li>
+<li><a href="{% url 'settings' %}">הגדרות</a> - פרטי ימות המשיח, חיבור השלוחה, אופן זיהוי המתקשרת, ימי הלימוד.</li>
+<li><a href="{% url 'crud_list' 'holidays' %}">חופשות</a> ו<a href="{% url 'crud_list' 'lessons' %}">מערכת שעות</a> (אם רוצים שיוך איחור לשיעור).</li>
+<li><a href="{% url 'crud_list' 'rules' %}">כללי התראה</a> - מה קורה כשתלמידה מגיעה למספר איחורים או חיסורים.</li></ol></div>
+<div class="card"><h2>איך מדווחים בטלפון</h2>
+<p>מחייגים לשלוחה ← מקישים מספר זהות של התלמידה ← בוחרים: 1 איחור לבית ספר, 2 איחור לשיעור, 3 חיסור ← (שעה / תאריך / סיבה לפי ההגדרות) ← המערכת מאשרת ואפשר לדווח על תלמידה נוספת באותה שיחה.</p>
+<p>בפעם הראשונה על כל תלמידה מתבקשת הקלטת שם (נשמעת מכאן והלאה בכל שיחה). אם יש התראה על התלמידה - היא מושמעת מיד אחרי הקשת ת.ז.</p></div>
+<div class="card"><h2>תמיכה</h2>
+{% if s.support_contact %}<p>לפניה לתמיכה: {{ s.support_contact }}</p>{% endif %}
+{% if request.session.support %}<p class="mute">את/ה בכניסת תמיכה (צפייה בלבד).</p>{% else %}
+<p>כדי שמישהו יוכל לעזור לכם ולראות את המסכים (צפייה בלבד, בלי יכולת לשנות), הפיקו קוד זמני ושלחו אותו:</p>
+<form method="post" action="{% url 'support_code' %}" style="display:inline">{% csrf_token %}<button>הפקת קוד תמיכה (24 שעות)</button></form>
+<form method="post" action="{% url 'support_revoke' %}" style="display:inline">{% csrf_token %}<button class="danger">ביטול הקוד</button></form>
+<p class="mute">כתובת הכניסה לתמיכה: <code>/support/</code>. הכניסה נרשמת ביומן הפעולות.</p>{% endif %}</div>
+{% endblock %}

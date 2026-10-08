@@ -1,0 +1,14 @@
+{% extends "attendance/base.html" %}{% block title %}דוחות{% endblock %}
+{% block content %}
+<h1>דוח נוכחות - {{ school }}</h1>
+<div class="help noprint">סיכום לכל תלמידה בטווח התאריכים: איחורים לבית ספר, איחורים לשיעור וימי חיסור (ימי לימוד בלבד, בלי שבת/חופשות). אפשר לסנן לפי כיתה ולהציג רק מי שיש לה לפחות מספר מסוים של אירועים. להדפסה לחצו Ctrl+P, לאקסל - הכפתור.</div>
+<form class="card row noprint" method="get">
+<div class="field"><label>מתאריך</label><input type="date" name="from" value="{{ start|date:'Y-m-d' }}"></div>
+<div class="field"><label>עד</label><input type="date" name="to" value="{{ end|date:'Y-m-d' }}"></div>
+<div class="field"><label>כיתה</label><select name="class"><option value="">כל הכיתות</option>{% for c in classes %}<option value="{{ c.pk }}" {% if g.class == c.pk|stringformat:"s" %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+<div class="field"><label>לפחות X אירועים</label><input type="number" name="min" min="0" style="width:90px" value="{{ g.min }}"></div>
+<button>הצגה</button> <a class="btn sec" href="?{{ request.GET.urlencode }}&export=xlsx">אקסל</a> <button type="button" class="sec" onclick="print()">הדפסה</button></form>
+<p>{{ start|date:"d/m/Y" }} ({{ start_h }}) עד {{ end|date:"d/m/Y" }} ({{ end_h }})</p>
+<div class="card scroll"><table><tr><th>כיתה</th><th>תלמידה</th><th>איחורים לבית ספר</th><th>איחורים לשיעור</th><th>ימי חיסור</th><th>לא מוצדקים</th></tr>
+{% for r in rows %}<tr><td>{{ r.student.school_class }}</td><td><a href="{% url 'student_edit' r.student.pk %}">{{ r.student }}</a></td><td>{{ r.late_school }}</td><td>{{ r.late_lesson }}</td><td>{{ r.absent }}</td><td>{{ r.unjustified }}</td></tr>{% empty %}<tr><td colspan="6" class="mute">אין נתונים</td></tr>{% endfor %}</table></div>
+{% endblock %}

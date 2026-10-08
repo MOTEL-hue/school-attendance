@@ -1,0 +1,16 @@
+{% extends "attendance/base.html" %}{% block title %}ראשי{% endblock %}
+{% block content %}
+<h1>{{ s.school_name }}</h1>
+<p class="mute">{{ today }}</p>
+<div class="grid">
+<div class="card"><div class="stat">{{ late_today }}</div>איחורים היום</div>
+<div class="card"><div class="stat">{{ absent_today }}</div>חיסורים היום</div>
+<div class="card"><div class="stat">{{ open_alerts_count }}</div><a href="{% url 'alerts' %}">התראות פתוחות</a></div>
+<div class="card"><div class="stat">{{ unmatched }}</div><a href="{% url 'records' %}?unmatched=1">דיווחים לא מזוהים</a></div>
+</div>
+{% if not students %}<div class="help">עוד אין תלמידות במערכת. התחילו ב<a href="{% url 'crud_list' 'classes' %}">הוספת כיתות</a> ואז <a href="{% url 'students_import' %}">ייבוא תלמידות מאקסל</a>. פירוט מלא בעמוד <a href="{% url 'help' %}">עזרה</a>.</div>{% endif %}
+{% if open_alerts %}<h2>התראות שדורשות טיפול</h2><div class="card scroll"><table>
+{% for a in open_alerts %}<tr><td><a href="{% url 'student_edit' a.student.pk %}">{{ a.student }}</a> <span class="mute">{{ a.student.school_class }}</span></td><td>{{ a.rule.name }}</td><td>{{ a.message }}</td></tr>{% endfor %}</table></div>{% endif %}
+<h2>דיווחים אחרונים</h2><div class="card scroll"><table><tr><th>תאריך</th><th>תלמידה</th><th>סוג</th><th>שעה</th><th>דרך</th></tr>
+{% for r in recent %}<tr><td>{{ r.date|date:"d/m/Y" }}</td><td>{{ r.student|default:"לא מזוהה" }}</td><td>{{ r.get_kind_display }}</td><td>{{ r.time|time:"H:i" }}</td><td>{{ r.get_source_display }}</td></tr>{% empty %}<tr><td colspan="5" class="mute">אין דיווחים עדיין</td></tr>{% endfor %}</table></div>
+{% endblock %}

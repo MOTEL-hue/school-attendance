@@ -1,0 +1,17 @@
+{% extends "attendance/base.html" %}{% block title %}דיווח באתר{% endblock %}
+{% block content %}
+<h1>דיווח נוכחות דרך האתר</h1>
+<div class="help">כמו בטלפון: מקלידים מספר זהות (או בוחרים מהרשימה), בוחרים סוג, ושעה. אם משאירים שעה ריקה נרשמת השעה הנוכחית. בחיסור אפשר לציין "עד תאריך" לכמה ימים.</div>
+<form method="post" class="card">{% csrf_token %}
+<div class="row">
+<div class="field"><label>מספר זהות</label><input name="tz" inputmode="numeric" autocomplete="off"></div>
+<div class="field"><label>או בחירה מהרשימה</label><select name="student"><option value="">-</option>{% for s in students %}<option value="{{ s.pk }}">{{ s.school_class }} - {{ s }}</option>{% endfor %}</select></div>
+</div>
+<div class="row">
+<div class="field"><label>סוג</label><select name="kind"><option value="late_school">איחור לבית ספר</option><option value="late_lesson">איחור לשיעור</option><option value="absent">חיסור</option></select></div>
+<div class="field"><label>תאריך</label><input type="date" name="date" value="{{ today }}"></div>
+<div class="field"><label>עד תאריך (חיסור)</label><input type="date" name="date_to"></div>
+<div class="field"><label>שעה (באיחור)</label><input type="time" name="time" value="{{ now }}"></div>
+<div class="field"><label>סיבה (בחיסור)</label><select name="reason"><option value="">ללא</option>{% for k,v in reasons %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+</div><button>רישום</button></form>
+{% endblock %}

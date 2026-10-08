@@ -1,0 +1,10 @@
+{% extends "attendance/base.html" %}{% block title %}תלמידות{% endblock %}
+{% block content %}
+<h1>תלמידות</h1>
+<div class="help">רשימת התלמידות. מספר הזהות הוא מה שמוקש בטלפון. בכרטיס התלמידה מוסיפים טלפונים של הורים (לזיהוי המתקשרת ולצינתוקים). להכנסה מרוכזת השתמשו בייבוא מאקסל.</div>
+<p class="noprint"><a class="btn" href="{% url 'student_new' %}">+ תלמידה</a> <a class="btn sec" href="{% url 'students_import' %}">ייבוא מאקסל</a> <a class="btn sec" href="{% url 'crud_list' 'classes' %}">כיתות</a> <a class="btn sec" href="{% url 'new_year_page' %}">מעבר שנה</a></p>
+<form class="card row noprint" method="get"><div class="field"><label>כיתה</label><select name="class"><option value="">הכול</option>{% for c in classes %}<option value="{{ c.pk }}" {% if g.class == c.pk|stringformat:"s" %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+<div class="field"><label>חיפוש</label><input name="q" value="{{ g.q }}"></div><div class="field"><label><input type="checkbox" name="all" value="1" {% if g.all %}checked{% endif %}> כולל לא פעילות</label></div><button>סינון</button></form>
+<div class="card scroll"><table><tr><th>כיתה</th><th>שם</th><th>ת.ז.</th><th></th></tr>
+{% for s in rows %}<tr><td>{{ s.school_class }}</td><td>{{ s }}{% if not s.active %} <span class="tag">לא פעילה</span>{% endif %}</td><td>{{ s.tz }}</td><td><a href="{% url 'student_edit' s.pk %}">כרטיס</a></td></tr>{% empty %}<tr><td colspan="4" class="mute">אין תלמידות</td></tr>{% endfor %}</table></div>
+{% endblock %}

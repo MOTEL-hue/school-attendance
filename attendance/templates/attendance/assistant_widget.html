@@ -1,0 +1,37 @@
+<style>
+#ai-btn{position:fixed;bottom:16px;inset-inline-start:16px;border-radius:99px;padding:10px 16px;box-shadow:0 2px 10px #0004;z-index:20}
+#ai-box{position:fixed;bottom:64px;inset-inline-start:16px;width:min(380px,calc(100vw - 32px));height:min(520px,70vh);display:none;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 24px #0005;z-index:21}
+#ai-box.open{display:flex}#ai-log{flex:1;overflow:auto;padding:10px}
+.ai-m{margin:6px 0;padding:8px 10px;border-radius:10px;white-space:pre-wrap;max-width:92%}.ai-u{background:color-mix(in srgb,var(--brand) 14%,var(--card));margin-inline-start:auto}.ai-a{background:var(--bg)}
+.ai-act{border:1px solid var(--brand);border-radius:10px;padding:8px;margin:6px 0}.ai-act button{margin-inline-end:6px}
+#ai-form{display:flex;gap:6px;padding:8px;border-top:1px solid var(--line)}#ai-form input{flex:1}
+@media print{#ai-btn,#ai-box{display:none!important}}
+</style>
+<button id="ai-btn" class="noprint" type="button">💬 עוזר אישי</button>
+<div id="ai-box" class="noprint" role="dialog" aria-label="עוזר אישי">
+<div id="ai-log"><div class="ai-m ai-a">שלום! אני העוזר האישי. אפשר לשאול איך מגדירים משהו, לבקש שאגדיר בשבילכם (תמיד אחכה לאישור שלכם), לבדוק את חיבור השלוחה, או לשאול על הנתונים - למשל "מי איחרה הכי הרבה החודש?".</div></div>
+<form id="ai-form"><input id="ai-in" placeholder="כתבו שאלה..." autocomplete="off"><button>שליחה</button></form>
+</div>
+<script>
+(function(){
+var btn=document.getElementById('ai-btn'),box=document.getElementById('ai-box'),log=document.getElementById('ai-log'),inp=document.getElementById('ai-in'),hist=[];
+var csrf=(document.cookie.match(/csrftoken=([^;]+)/)||[])[1]||'{{ csrf_token }}';
+try{hist=JSON.parse(sessionStorage.getItem('ai-hist')||'[]');hist.forEach(function(m){add(m.content,m.role=='user'?'ai-u':'ai-a')});}catch(e){hist=[]}
+function add(t,c){var d=document.createElement('div');d.className='ai-m '+c;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function save(){try{sessionStorage.setItem('ai-hist',JSON.stringify(hist.slice(-16)))}catch(e){}}
+function post(url,body){return fetch(url,{method:'POST',headers:{'X-CSRFToken':csrf,'Content-Type':'application/json'},body:JSON.stringify(body||{})}).then(function(r){return r.json()})}
+btn.onclick=function(){box.classList.toggle('open');if(box.classList.contains('open'))inp.focus()};
+function action(p){var d=document.createElement('div');d.className='ai-act';d.innerHTML='<div></div>';d.firstChild.textContent='הצעה לשינוי: '+p.summary;
+ var ok=document.createElement('button');ok.textContent='אישור';var no=document.createElement('button');no.textContent='ביטול';no.className='sec';
+ function done(r){d.innerHTML='';d.textContent=r.message}
+ ok.onclick=function(){ok.disabled=no.disabled=true;post('/assistant/'+p.id+'/confirm/').then(done)};
+ no.onclick=function(){post('/assistant/'+p.id+'/cancel/').then(done)};
+ d.appendChild(ok);d.appendChild(no);log.appendChild(d);log.scrollTop=log.scrollHeight}
+document.getElementById('ai-form').onsubmit=function(e){e.preventDefault();var t=inp.value.trim();if(!t)return;inp.value='';
+ add(t,'ai-u');hist.push({role:'user',content:t});var w=add('חושב...','ai-a');
+ post('/assistant/chat/',{messages:hist,path:location.pathname}).then(function(r){
+  if(r.error){w.textContent=r.error;hist.pop();save();return}
+  w.textContent=r.reply;hist.push({role:'assistant',content:r.reply});save();(r.pending||[]).forEach(action)
+ }).catch(function(){w.textContent='תקלה בתקשורת, נסו שוב';hist.pop()})};
+})();
+</script>

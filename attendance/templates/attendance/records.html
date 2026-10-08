@@ -1,0 +1,21 @@
+{% extends "attendance/base.html" %}{% block title %}דיווחים{% endblock %}
+{% block content %}
+<h1>דיווחים</h1>
+<div class="help">כל הדיווחים מהטלפון ומהאתר. אפשר לסנן, לתקן או למחוק (נרשם ביומן הפעולות). "לא מזוהה" = מישהי הקישה מספר זהות שלא קיים במערכת; בחרו בעריכה את התלמידה הנכונה.</div>
+<form class="card row noprint" method="get">
+<div class="field"><label>מתאריך</label><input type="date" name="from" value="{{ g.from }}"></div>
+<div class="field"><label>עד</label><input type="date" name="to" value="{{ g.to }}"></div>
+<div class="field"><label>כיתה</label><select name="class"><option value="">הכול</option>{% for c in classes %}<option value="{{ c.pk }}" {% if g.class == c.pk|stringformat:"s" %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+<div class="field"><label>סוג</label><select name="kind"><option value="">הכול</option>{% for k,v in kinds %}<option value="{{ k }}" {% if g.kind == k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+<div class="field"><label>חיפוש</label><input name="q" value="{{ g.q }}" placeholder="שם או ת.ז."></div>
+<div class="field"><label><input type="checkbox" name="unmatched" value="1" {% if g.unmatched %}checked{% endif %}> רק לא מזוהים</label></div>
+<button>סינון</button> <a class="btn sec" href="?{{ request.GET.urlencode }}&export=xlsx">ייצוא לאקסל</a> <a class="btn sec" href="{% url 'record_new' %}">+ דיווח ידני</a>
+</form>
+<p class="mute">{{ total }} דיווחים{% if total > 300 %} (מוצגים 300 הראשונים - צמצמו בסינון או ייצאו לאקסל){% endif %}</p>
+<div class="card scroll"><table><tr><th>תאריך</th><th>עברי</th><th>תלמידה</th><th>סוג</th><th>שעה</th><th>סיבה</th><th>דרך</th><th></th></tr>
+{% for r in rows %}<tr><td>{{ r.date|date:"d/m/Y" }}{% if r.date_to %} - {{ r.date_to|date:"d/m/Y" }}{% endif %}</td><td class="mute">{{ r.heb }}</td>
+<td>{% if r.student %}<a href="{% url 'student_edit' r.student.pk %}">{{ r.student }}</a> <span class="mute">{{ r.student.school_class }}</span>{% else %}<span class="tag w">לא מזוהה {{ r.raw_tz }}</span>{% endif %}</td>
+<td>{{ r.get_kind_display }}{% if r.lesson %} (שיעור {{ r.lesson }}){% endif %}</td><td>{{ r.time|time:"H:i" }}</td><td>{{ r.get_reason_display }}{% if r.kind == 'absent' %} <span class="tag">{{ r.justified|yesno:"מוצדק,לא מוצדק" }}</span>{% endif %}</td><td>{{ r.get_source_display }}</td>
+<td><a href="{% url 'record_edit' r.pk %}">עריכה</a></td></tr>
+{% empty %}<tr><td colspan="8" class="mute">אין דיווחים</td></tr>{% endfor %}</table></div>
+{% endblock %}

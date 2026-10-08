@@ -1,0 +1,3 @@
+{% extends "attendance/base.html" %}{% block title %}יומן פעולות{% endblock %}
+{% block content %}<h1>יומן פעולות</h1><div class="help">מי דיווח, תיקן או שינה, ומתי. מציג את 500 הפעולות האחרונות.</div>
+<div class="card scroll"><table><tr><th>מתי</th><th>מי</th><th>פעולה</th><th>פרטים</th></tr>{% for a in rows %}<tr><td>{{ a.when|date:"d/m/Y H:i" }}</td><td>{{ a.actor }}</td><td>{{ a.action }}</td><td>{{ a.details }}</td></tr>{% endfor %}</table></div>{% endblock %}

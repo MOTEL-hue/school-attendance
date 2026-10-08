@@ -1,0 +1,17 @@
+{% extends "attendance/base.html" %}{% block title %}כרטיס תלמידה{% endblock %}
+{% block content %}
+<h1>{% if student %}{{ student }} <span class="mute">{{ student.school_class }}</span>{% else %}תלמידה חדשה{% endif %}</h1>
+<div class="help">פרטי התלמידה. "פעילה" כבויה = לא מופיעה בדוחות ולא ניתן לדווח עליה (בוגרת). הנתונים ההיסטוריים נשמרים.</div>
+<form method="post" class="card">{% csrf_token %}
+{% for f in form %}<div class="field"><label>{{ f.label }}</label>{{ f }}{% for e in f.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>{% endfor %}<button>שמירה</button></form>
+{% if student %}
+<h2>חצי שנה אחרונה</h2><div class="grid"><div class="card"><div class="stat">{{ stats.late_school }}</div>איחורים לבית ספר</div><div class="card"><div class="stat">{{ stats.late_lesson }}</div>איחורים לשיעור</div><div class="card"><div class="stat">{{ stats.absent }}</div>ימי חיסור</div><div class="card"><div class="stat">{{ stats.unjustified }}</div>חיסור לא מוצדק</div></div>
+<h2>טלפונים</h2><div class="help">מספרים אלה מזהים את המתקשרת (בהגדרת "מספרים רשומים"), ואליהם נשלחים צינתוקי התראה אם סימנתם. קוד אישי נדרש רק בהגדרת "טלפון + קוד".</div>
+<div class="card"><table>{% for c in contacts %}<tr><td>{{ c.label }}</td><td>{{ c.phone }}</td><td>{{ c.receives_alerts|yesno:"מקבל צינתוק,בלי צינתוק" }}</td><td>{% if c.pin %}יש קוד{% endif %}</td>
+<td><form method="post" action="{% url 'contact_delete' c.pk %}">{% csrf_token %}<button class="danger">הסרה</button></form></td></tr>{% empty %}<tr><td class="mute">אין טלפונים</td></tr>{% endfor %}</table>
+<form method="post" class="row">{% csrf_token %}{% for f in cform %}<div class="field"><label>{{ f.label }}</label>{{ f }}</div>{% endfor %}<button name="add_contact" value="1">הוספת טלפון</button></form></div>
+<h2>הקלטת שם</h2><div class="card">{% if student.name_recorded %}השם הוקלט בטלפון.{% else %}השם עדיין לא הוקלט - בדיווח הראשון בטלפון תתבקש הקלטה.{% endif %}
+<form method="post">{% csrf_token %}<button class="sec" name="reset_name" value="1">בקשת הקלטה מחדש</button></form></div>
+{% if alerts %}<h2>התראות</h2><div class="card">{% for a in alerts %}<div>{{ a.created_at|date:"d/m/Y" }} - {{ a.rule.name }}: {{ a.message }}</div>{% endfor %}</div>{% endif %}
+<h2>היסטוריית דיווחים</h2><div class="card scroll"><table>{% for r,h in records %}<tr><td>{{ r.date|date:"d/m/Y" }} <span class="mute">{{ h }}</span></td><td>{{ r.get_kind_display }}</td><td>{{ r.time|time:"H:i" }}</td><td>{{ r.get_reason_display }}</td><td><a href="{% url 'record_edit' r.pk %}">עריכה</a></td></tr>{% empty %}<tr><td class="mute">אין דיווחים</td></tr>{% endfor %}</table></div>
+{% endif %}{% endblock %}

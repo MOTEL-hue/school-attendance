@@ -1,0 +1,5 @@
+{% extends "attendance/base.html" %}{% block title %}גיבוי וייצוא{% endblock %}
+{% block content %}<h1>גיבוי וייצוא נתונים</h1>
+<div class="help">הורדת כל הנתונים למחשב שלכם. מומלץ לגבות מדי פעם, ובמיוחד לפני מעבר שנה. הסיסמה של ימות המשיח לא נכללת בגיבוי. מסד הנתונים עצמו (PostgreSQL) מגובה גם על ידי ספק האחסון - בדקו בחשבון שלכם.</div>
+<div class="card"><p><a class="btn" href="?format=json">גיבוי מלא (JSON)</a> כל הטבלאות: תלמידות, טלפונים, דיווחים, התראות, הגדרות כללים.</p>
+<p><a class="btn sec" href="?format=xlsx">כל הדיווחים לאקסל</a></p></div>{% endblock %}

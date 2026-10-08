@@ -1,0 +1,6 @@
+{% extends "attendance/base.html" %}{% block title %}כניסת תמיכה{% endblock %}
+{% block content %}
+<div class="card" style="max-width:380px;margin:40px auto"><h1>כניסת תמיכה</h1>
+<div class="help">הקוד נוצר על ידי בעל/ת המערכת (עמוד עזרה). הכניסה לצפייה בלבד ופגה אחרי 24 שעות.</div>
+<form method="post">{% csrf_token %}<div class="field"><label>קוד תמיכה</label><input name="code" inputmode="numeric" autocomplete="off"></div>
+{% if error %}<div class="err">{{ error }}</div>{% endif %}<button>כניסה</button></form></div>{% endblock %}

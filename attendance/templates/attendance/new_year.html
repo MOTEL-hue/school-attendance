@@ -1,0 +1,7 @@
+{% extends "attendance/base.html" %}{% block title %}מעבר שנה{% endblock %}
+{% block content %}
+<h1>מעבר לשנת לימודים חדשה</h1>
+<div class="help">לכל כיתה בוחרים לאיזו כיתה התלמידות עוברות (למשל ז1 ← ח1), או "בוגרות" (הופכות ללא פעילות). כל הדיווחים הישנים נשמרים, וספירת "מתחילת שנה" מתאפסת להיום. כדאי לגבות לפני כן (עמוד גיבוי).</div>
+<form method="post" action="{% url 'new_year' %}" class="card" onsubmit="return confirm('לבצע מעבר שנה?')">{% csrf_token %}
+<table>{% for c in classes %}<tr><td>{{ c }}</td><td><select name="map_{{ c.pk }}"><option value="">להשאיר</option><option value="graduate">בוגרות (לא פעילות)</option>{% for t in classes %}{% if t.pk != c.pk %}<option value="{{ t.pk }}">עוברות ל{{ t }}</option>{% endif %}{% endfor %}</select></td></tr>{% endfor %}</table><button>ביצוע מעבר</button></form>
+{% endblock %}

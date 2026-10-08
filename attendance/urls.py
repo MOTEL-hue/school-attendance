@@ -1,0 +1,42 @@
+from django.contrib.auth import views as auth_views
+from django.urls import path
+
+from . import views as v
+
+urlpatterns = [
+    path("phone/<str:secret>/", v.yemot_api, name="yemot_api"),
+    path("login/", auth_views.LoginView.as_view(template_name="attendance/login.html"), name="login"),
+    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("support/", v.support_login, name="support_login"),
+    path("", v.dashboard, name="dashboard"),
+    path("report/", v.web_report, name="web_report"),
+    path("records/", v.records, name="records"),
+    path("records/new/", v.record_edit, name="record_new"),
+    path("records/<int:pk>/", v.record_edit, name="record_edit"),
+    path("records/<int:pk>/delete/", v.record_delete, name="record_delete"),
+    path("students/", v.students, name="students"),
+    path("students/new/", v.student_edit, name="student_new"),
+    path("students/<int:pk>/", v.student_edit, name="student_edit"),
+    path("contacts/<int:pk>/delete/", v.contact_delete, name="contact_delete"),
+    path("students-import/", v.students_import, name="students_import"),
+    path("students-template/", v.import_template, name="import_template"),
+    path("new-year/", v.new_year_page, name="new_year_page"),
+    path("new-year/do/", v.new_year, name="new_year"),
+    path("summary/", v.report_summary, name="summary"),
+    path("alerts/", v.alerts_page, name="alerts"),
+    path("alerts/<int:pk>/", v.alert_action, name="alert_action"),
+    path("settings/", v.settings_page, name="settings"),
+    path("settings/yemot-setup/", v.yemot_setup, name="yemot_setup"),
+    path("settings/yemot-test/", v.yemot_test, name="yemot_test"),
+    path("manage/<str:kind>/", v.crud_list, name="crud_list"),
+    path("manage/<str:kind>/new/", v.crud_edit, name="crud_new"),
+    path("manage/<str:kind>/<int:pk>/", v.crud_edit, name="crud_edit"),
+    path("manage/<str:kind>/<int:pk>/delete/", v.crud_delete, name="crud_delete"),
+    path("audit/", v.audit_page, name="audit"),
+    path("backup/", v.backup, name="backup"),
+    path("help/", v.help_page, name="help"),
+    path("assistant/chat/", v.assistant_chat, name="assistant_chat"),
+    path("assistant/<int:pk>/<str:decision>/", v.assistant_decide, name="assistant_decide"),
+    path("help/support-code/", v.support_code, name="support_code"),
+    path("help/support-revoke/", v.support_revoke, name="support_revoke"),
+]

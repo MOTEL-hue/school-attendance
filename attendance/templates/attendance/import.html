@@ -1,0 +1,8 @@
+{% extends "attendance/base.html" %}{% block title %}ייבוא תלמידות{% endblock %}
+{% block content %}
+<h1>ייבוא תלמידות</h1>
+<div class="help">מורידים את התבנית, ממלאים: ת.ז., שם פרטי, שם משפחה, כיתה, וטלפונים (אמא / אבא / תלמידה - לא חובה), ומעלים. כיתות חדשות נוצרות אוטומטית. תלמידה שכבר קיימת (לפי ת.ז.) מתעדכנת, לא נוצרת פעמיים.</div>
+<p><a class="btn sec" href="{% url 'import_template' %}">הורדת תבנית אקסל</a></p>
+<form method="post" enctype="multipart/form-data" class="card">{% csrf_token %}{{ form.as_p }}<button>ייבוא</button></form>
+{% if result %}<div class="card"><b>נוספו {{ result.0 }}, עודכנו {{ result.1 }}.</b>{% if result.2 %}<div class="err">שורות שלא נקלטו:</div><ul>{% for e in result.2 %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}</div>{% endif %}
+{% endblock %}

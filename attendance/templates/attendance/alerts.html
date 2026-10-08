@@ -1,0 +1,10 @@
+{% extends "attendance/base.html" %}{% block title %}התראות{% endblock %}
+{% block content %}
+<h1>התראות</h1>
+<div class="help">התראה נוצרת אוטומטית כשתלמידה חוצה סף שהוגדר ב<a href="{% url 'crud_list' 'rules' %}">כללי התראה</a>. כאן המזכירה רואה מי עברה סף ומסמנת "טופל". אם הוגדרה הודעה למתקשרת - היא תושמע בשיחה הבאה אחרי הקשת ת.ז. של התלמידה. אם הוגדר צינתוק - הוא נשלח מיד, והסטטוס מוצג כאן (אפשר לשלוח שוב).</div>
+<p><a class="btn sec" href="?{% if not show_all %}all=1">הצגת הכול כולל שטופלו{% else %}">רק פתוחות{% endif %}</a></p>
+<div class="card scroll"><table><tr><th>תאריך</th><th>תלמידה</th><th>כלל</th><th>הודעה</th><th>צינתוק</th><th></th></tr>
+{% for a in rows %}<tr><td>{{ a.created_at|date:"d/m/Y H:i" }}</td><td><a href="{% url 'student_edit' a.student.pk %}">{{ a.student }}</a> <span class="mute">{{ a.student.school_class }}</span></td><td>{{ a.rule.name }}</td><td>{{ a.message }}{% if a.announce_pending %} <span class="tag">ממתינה להשמעה בטלפון</span>{% endif %}</td><td class="mute">{{ a.tzintuk_status }}</td>
+<td><form method="post" action="{% url 'alert_action' a.pk %}">{% csrf_token %}{% if a.handled %}<button class="sec" name="do" value="reopen">פתיחה מחדש</button>{% else %}<button name="do" value="handled">טופל</button>{% endif %}{% if a.rule.tzintuk %} <button class="sec" name="do" value="tzintuk">צינתוק שוב</button>{% endif %}</form></td></tr>
+{% empty %}<tr><td colspan="6" class="mute">אין התראות</td></tr>{% endfor %}</table></div>
+{% endblock %}
