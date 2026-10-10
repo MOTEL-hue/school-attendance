@@ -1,4 +1,3 @@
-from datetime import timedelta
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -14,7 +13,7 @@ from attendance.phone import handle
 from attendance.services import create_record
 from attendance.views_public import create_school, delete_school
 
-from .base import Base, make_school
+from .base import Base, last_school_day, make_school
 
 
 def in_school(school):
@@ -91,7 +90,7 @@ class TwoSchools(Base):
     def test_alerts_and_rules_scoped(self):
         with in_school(self.other):
             AlertRule.objects.create(name="כלל ב", metric="absent_any", threshold=1)
-            create_record(student=self.st_b, kind="absent", date=today_il() - timedelta(days=1))
+            create_record(student=self.st_b, kind="absent", date=last_school_day())
             self.assertEqual(Alert.objects.count(), 1)
         self.assertEqual(Alert.objects.count(), 0)
         self.assertEqual(AlertRule.objects.count(), 0)

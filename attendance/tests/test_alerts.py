@@ -6,7 +6,7 @@ from attendance.calendar_utils import today_il
 from attendance.models import Alert, AlertRule, Attendance, Contact
 from attendance.services import create_record
 
-from .base import Base
+from .base import Base, last_school_day
 
 
 class AlertTests(Base):
@@ -42,7 +42,7 @@ class AlertTests(Base):
         AlertRule.objects.create(name="לא מוצדק", metric="absent_unjustified", threshold=1)
         create_record(student=self.st, kind="absent", date=today_il(), reason="sick")
         self.assertEqual(Alert.objects.count(), 0)
-        create_record(student=self.st, kind="absent", date=today_il() - timedelta(days=1), reason="other")
+        create_record(student=self.st, kind="absent", date=last_school_day(), reason="other")
         self.assertEqual(Alert.objects.count(), 1)
 
     def test_message_and_announce_flag(self):

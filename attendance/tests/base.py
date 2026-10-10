@@ -1,8 +1,20 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 
 from attendance import tenant
+from attendance.calendar_utils import today_il
 from attendance.models import AuthorizedCaller, Contact, School, SchoolClass, SchoolSettings, SchoolUser, Student
+
+
+
+def last_school_day():
+    """יום הלימודים האחרון לפני היום (ראשון עד חמישי), כדי שהבדיקות לא ייכשלו בשישי ובשבת."""
+    d = today_il() - timedelta(days=1)
+    while d.weekday() in (4, 5):
+        d -= timedelta(days=1)
+    return d
 
 
 def make_school(name="בית ספר א", secret="sekret", status="active", email="a@x.com"):
