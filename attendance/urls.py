@@ -40,6 +40,7 @@ urlpatterns = [
     path("alerts/", v.alerts_page, name="alerts"),
     path("alerts/<int:pk>/", v.alert_action, name="alert_action"),
     path("settings/", v.settings_page, name="settings"),
+    path("lines/", v.line_management, name="line_management"),
     path("settings/yemot-setup/", v.yemot_setup, name="yemot_setup"),
     path("settings/yemot-test/", v.yemot_test, name="yemot_test"),
     path("manage/<str:kind>/", v.crud_list, name="crud_list"),

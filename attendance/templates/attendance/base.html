@@ -25,6 +25,7 @@
 <a href="{% url 'calendar' %}" class="{% if n == 'calendar' or n == 'calendar_day' or n == 'event_new' or n == 'event_edit' or n == 'event_send' or n == 'calendar_settings' or n == 'zmanim_table' or n == 'holidays_auto' %}on{% endif %}">📅 לוח שנה</a>
 <a href="{% url 'alerts' %}" class="{% if n == 'alerts' %}on{% endif %}">🔔 התראות</a>
 <a href="{% url 'crud_list' 'rules' %}" class="{% if n == 'crud_list' or n == 'crud_edit' or n == 'crud_new' %}on{% endif %}">⚖️ כללי התראה</a>
+<a href="{% url 'line_management' %}" class="{% if n == 'line_management' %}on{% endif %}">📞 ניהול קווים</a>
 <a href="{% url 'settings' %}" class="{% if n == 'settings' %}on{% endif %}">⚙️ הגדרות</a>
 <a href="{% url 'help' %}" class="{% if n == 'help' %}on{% endif %}">🛟 עזרה</a>
 {% endif %}
