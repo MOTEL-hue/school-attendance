@@ -1,0 +1,45 @@
+{% extends "attendance/base.html" %}
+{% block title %}ניהול קווים{% endblock %}
+{% block content %}
+<h1>📞 ניהול קווים</h1>
+<div class="help">חיבור ימות המשיח במסך אחד. מזינים מפתח API פעם אחת; בהמשך אפשר להשאיר אותו ריק. אם מזינים גם נתיב שלוחה, האתר ינסה לחבר ולהגדיר אותה בלחיצה אחת.</div>
+
+<div class="card">
+  <h2 style="margin-top:0">מצב החיבור</h2>
+  {% if connected_configured %}
+    <p><b>🟢 פרטי חיבור שמורים</b></p>
+    {% if api_key_saved %}<p class="mute">מפתח API שמור ומוצפן באתר. המפתח עצמו לא מוצג.</p>{% elif legacy_connection %}<p class="mute">נמצא חיבור קיים באמצעות מספר מערכת וסיסמה.</p>{% endif %}
+  {% else %}
+    <p><b>⚪ עדיין לא הוגדר חיבור</b></p>
+  {% endif %}
+  {% if extension_done %}
+    <p>🟢 השלוחה הוגדרה אוטומטית בעבר.</p>
+  {% else %}
+    <p class="mute">אפשר להגדיר את השלוחה אוטומטית על ידי הזנת הנתיב למטה.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">חיבור או עדכון הגדרות</h2>
+  <form method="post">
+    {% csrf_token %}
+    {% for f in form %}
+      <div class="field">
+        <label for="{{ f.id_for_label }}">{{ f.label }}</label>
+        {{ f }}
+        {% if f.help_text %}<div class="h">{{ f.help_text }}</div>{% endif %}
+        {% for e in f.errors %}<div class="err">{{ e }}</div>{% endfor %}
+      </div>
+    {% endfor %}
+    <button type="submit">🔗 חבר ובדוק חיבור</button>
+  </form>
+  <p class="mute">המערכת בודקת את החיבור לפני שמירת מפתח חדש. המפתח נשמר מוצפן ולא נרשם ביומן הפעולות. אם נתיב השלוחה מולא, האתר ינסה להגדיר אותה בלי למחוק הגדרות אחרות.</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">מה עושים אחרי החיבור?</h2>
+  <p><a href="{% url 'alerts' %}">🔔 מעבר להתראות, צינתוקים והודעות</a></p>
+  <p><a href="{% url 'calendar' %}">📅 מעבר ללוח השנה ולהודעות המתוזמנות</a></p>
+  <p><a href="{% url 'settings' %}">⚙️ הגדרות מתקדמות והוראות לשלוחה</a></p>
+</div>
+{% endblock %}
