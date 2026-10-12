@@ -139,7 +139,8 @@ class SchoolSettings(TenantModel):
 
     @property
     def yemot_token(self):
-        return f"{self.yemot_number}:{self.yemot_password}" if self.yemot_number and self.yemot_password else ""
+        return (f"{self.yemot_number}:{self.yemot_password}" if self.yemot_number and self.yemot_password
+                else self.yemot_password if self.yemot_password else "")
 
 
 class LessonSlot(TenantModel):
