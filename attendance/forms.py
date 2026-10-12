@@ -46,6 +46,35 @@ class SettingsForm(forms.ModelForm):
             obj.save()
         return obj
 
+ 
+class LineConnectionForm(forms.Form):
+    """טופס קצר לחיבור ימות המשיח באמצעות מפתח API."""
+
+    api_key_input = forms.CharField(
+        label="מפתח API של ימות המשיח",
+        required=False,
+        widget=forms.PasswordInput(render_value=False, attrs={"autocomplete": "new-password"}),
+        help_text="מזינים פעם אחת. נשמר מוצפן; משאירים ריק כדי להשתמש במפתח/בחיבור השמור.",
+    )
+    phone_dir = forms.CharField(
+        label="תיקיית השלוחה (אופציונלי)",
+        required=False,
+        max_length=60,
+        help_text="למשל /7. אם ממלאים, המערכת תנסה להגדיר את השלוחה אוטומטית.",
+    )
+    caller_id = forms.CharField(label="זיהוי יוצא לצינתוקים (אופציונלי)", required=False, max_length=20)
+    voice_template_id = forms.CharField(label="מזהה תבנית להודעות קוליות (אופציונלי)", required=False, max_length=20)
+
+    def clean_phone_dir(self):
+        path = (self.cleaned_data.get("phone_dir") or "").strip()
+        if not path:
+            return ""
+        if not path.startswith("/"):
+            path = "/" + path
+        if ".." in path or "?" in path or "#" in path or chr(92) in path or not path.strip("/"):
+            raise forms.ValidationError("יש להזין נתיב שלוחה פשוט, לדוגמה /7.")
+        return path
+
 
 class UniqueInSchoolMixin:
     """בדיקת ייחודיות בתוך בית הספר (שדה בית הספר לא נמצא בטופס, ולכן Django לא בודק לבד)."""
