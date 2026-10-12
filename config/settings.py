@@ -45,6 +45,7 @@ MIDDLEWARE = [
     "attendance.middleware.TenantMiddleware",
     "attendance.middleware.SupportReadOnlyMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "attendance.error_monitoring.HebrewErrorLoggingMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [{
