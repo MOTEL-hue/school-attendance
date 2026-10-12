@@ -20,7 +20,7 @@ from . import tenant
 from . import importers, phone, reports, yemot_client
 from .calendar_utils import both_dates, hebrew_date, now_il, today_il
 from .forms import (CallerForm, ClassForm, ContactForm, HolidayForm, ImportForm, LessonForm, RecordForm, RuleForm,
-                    SettingsForm, StudentForm)
+                    SettingsForm, StudentForm, LineConnectionForm)
 from .models import (Alert, AlertRule, Attendance, AuditLog, AuthorizedCaller, Contact, LessonSlot, NonSchoolDay,
                      School, SchoolClass, SchoolSettings, Student)
 from .services import audit, create_record, parse_hhmm
@@ -381,6 +381,85 @@ def yemot_test(request):
     except yemot_client.YemotError as e:
         messages.error(request, f"החיבור נכשל: {e}")
     return redirect("settings")
+
+ 
+# ---------- ניהול קו ימות המשיח ----------
+@login_required
+def line_management(request):
+    """מסך מרוכז לחיבור API ולניסיון הגדרה אוטומטית של השלוחה."""
+    if request.session.get("support_school"):
+        messages.error(request, "מצב התמיכה הוא לצפייה בלבד.")
+        return redirect("dashboard")
+
+    s = SchoolSettings.get()
+    if request.method == "POST":
+        form = LineConnectionForm(request.POST)
+        if form.is_valid():
+            api_key = form.cleaned_data["api_key_input"].strip()
+            if api_key:
+                # מפתח API גולמי נשמר בשדה הסיסמה הקיים, שמוצפן במודל.
+                # כשהמספר ריק, yemot_token מחזיר את המפתח עצמו.
+                s.yemot_number = ""
+                s.yemot_password = api_key
+            s.phone_dir = form.cleaned_data["phone_dir"]
+            s.caller_id = form.cleaned_data["caller_id"].strip()
+            s.voice_template_id = form.cleaned_data["voice_template_id"].strip()
+
+            try:
+                if not s.yemot_token:
+                    raise yemot_client.YemotError("לא הוזן מפתח API ואין חיבור שמור.")
+                yemot_client._call("GetSession", s.yemot_token, {})
+            except yemot_client.YemotError:
+                # לא מציגים את פירוט החריגה: כתובת הבקשה עלולה לכלול את המפתח.
+                messages.error(request, "בדיקת החיבור נכשלה. בדקו שמפתח ה-API נכון ונסו שוב. המפתח לא הוצג ולא נשמר.")
+                s = SchoolSettings.get()
+                return render(request, "attendance/line_management.html", {
+                    "form": LineConnectionForm(initial={
+                        "phone_dir": s.phone_dir,
+                        "caller_id": s.caller_id,
+                        "voice_template_id": s.voice_template_id,
+                    }),
+                    "connected_configured": bool(s.yemot_token),
+                    "api_key_saved": bool(s.yemot_token and not s.yemot_number),
+                    "legacy_connection": bool(s.yemot_number),
+                    "extension_done": s.extension_done,
+                })
+
+            s.save()
+            audit(actor(request), "בדיקת חיבור ימות המשיח", "מפתח API")
+            if s.phone_dir:
+                try:
+                    yemot_client.update_extension(s, s.phone_dir, {
+                        "type": "api",
+                        "api_link": phone_url(request),
+                        "api_url_post": "yes",
+                        "api_log": "no",
+                        "api_dir": s.phone_dir,
+                        "api_hangup_send": "no",
+                    })
+                    s.extension_done = True
+                    s.save(update_fields=["extension_done"])
+                    audit(actor(request), "הגדרה אוטומטית של שלוחת ימות המשיח", s.phone_dir)
+                    messages.success(request, "החיבור תקין והשלוחה הוגדרה בהצלחה.")
+                except yemot_client.YemotError:
+                    messages.warning(request, "החיבור אומת ונשמר, אבל הגדרת השלוחה האוטומטית נכשלה. בדקו את נתיב השלוחה ונסו שוב.")
+            else:
+                messages.success(request, "החיבור לימות המשיח תקין והפרטים נשמרו. אפשר להוסיף נתיב שלוחה כדי להגדיר אותה בלחיצה אחת.")
+            return redirect("line_management")
+    else:
+        form = LineConnectionForm(initial={
+            "phone_dir": s.phone_dir,
+            "caller_id": s.caller_id,
+            "voice_template_id": s.voice_template_id,
+        })
+
+    return render(request, "attendance/line_management.html", {
+        "form": form,
+        "connected_configured": bool(s.yemot_token),
+        "api_key_saved": bool(s.yemot_token and not s.yemot_number),
+        "legacy_connection": bool(s.yemot_number),
+        "extension_done": s.extension_done,
+    })
 
 
 # ---------- ניהול רשימות פשוטות ----------
