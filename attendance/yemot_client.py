@@ -22,8 +22,10 @@ def _call(command, token, params, json_body=None):
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             data = json.loads(r.read().decode("utf-8"))
-    except (urllib.error.URLError, ValueError, TimeoutError) as e:
-        raise YemotError(f"תקלה בתקשורת עם ימות המשיח: {e}") from e
+    except (urllib.error.URLError, ValueError, TimeoutError):
+        # חריגות רשת עלולות להכיל את כתובת הבקשה, ובתוכה מפתח ה-API.
+        # לא מצרפים את החריגה המקורית כדי לא לחשוף את המפתח בהודעה או ב-traceback.
+        raise YemotError("תקלה בתקשורת עם ימות המשיח. בדקו את החיבור ונסו שוב.") from None
     if data.get("responseStatus") not in ("OK", None):
         raise YemotError(data.get("message") or data.get("responseStatus"))
     return data
