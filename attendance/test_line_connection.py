@@ -1,5 +1,9 @@
+from unittest import mock
+import urllib.error
+
 from django.test import SimpleTestCase, override_settings
 
+from . import yemot_client
 from .forms import LineConnectionForm
 from .models import SchoolSettings
 
@@ -39,3 +43,16 @@ class YemotTokenCompatibilityTests(SimpleTestCase):
         settings = SchoolSettings(yemot_number="123456")
         settings.yemot_password = "legacy-password"
         self.assertEqual(settings.yemot_token, "123456:legacy-password")
+
+
+class YemotClientSecurityTests(SimpleTestCase):
+    def test_network_error_does_not_expose_api_token(self):
+        token = "sensitive-api-token"
+        error = urllib.error.URLError(
+            f"https://www.call2all.co.il/ym/api/GetSession?token={token}"
+        )
+        with mock.patch("attendance.yemot_client.urllib.request.urlopen", side_effect=error):
+            with self.assertRaises(yemot_client.YemotError) as raised:
+                yemot_client._call("GetSession", token, {})
+        self.assertNotIn(token, str(raised.exception))
+        self.assertIn("בדקו את החיבור", str(raised.exception))
